@@ -1,4 +1,4 @@
-﻿    const INITIAL_INFRASTRUCTURES = [
+    const INITIAL_INFRASTRUCTURES = [
       // Skyborn (Stability)
       { id: 'nobles', name: '귀족원 (House of Nobles)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
       { id: 'memorial', name: '창립자 기념관 (Founders Memorial)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
