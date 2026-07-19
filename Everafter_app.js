@@ -446,6 +446,26 @@
       document.getElementById(modalId).style.display = 'none';
     }
 
+    // 모달 바깥(어두운 배경) 클릭 시 닫기
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          closeModal(overlay.id);
+        }
+      });
+    });
+
+    // ESC 키로 현재 열려있는 모달 닫기
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+          if (overlay.style.display === 'flex') {
+            closeModal(overlay.id);
+          }
+        });
+      }
+    });
+
     function getAPModifier(infraId) {
       let multiplier = 1.0;
       let blocked = false;
