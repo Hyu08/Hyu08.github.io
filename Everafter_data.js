@@ -1,4 +1,4 @@
-﻿    const RANDOM_SCRIPTS = {
+    const RANDOM_SCRIPTS = {
       nobles: {
         season1: [
           "귀족원에서는 새로운 안건이 상정되었습니다. 당신의 의견은 의회에 전달되었습니다.",
