@@ -427,6 +427,7 @@
     function saveToLocalStorage() {
       localStorage.setItem('tirnanog_state', JSON.stringify(state));
       updateUI();
+      pushToRealtime();
     }
 
     function switchTab(tabId) {
@@ -1718,116 +1719,231 @@ ${desc}
       }
     }
 
-    // 1-Second Cloud Sync System (Npoint.io)
-    function generateCloudRoom() {
-      if (confirm("새로운 클라우드 동기화 방을 생성하시겠습니까?\n방을 생성하면 새로운 주소가 발급되며 기존 방과의 연결은 끊어집니다.")) {
-        fetch('https://api.npoint.io', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            tirnanog_cloud_init: true,
-            timestamp: Date.now(),
-            state: state
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data && data.id) {
-            document.getElementById('cloud-room-input').value = data.id;
-            localStorage.setItem('tirnanog_cloud_key', data.id);
-            alert(`새 동기화 방이 생성되었습니다!\n방 키: ${data.id}\n\n이 키만 복사하여 다른 운영진 3명에게 전달하세요.`);
-            uploadToCloud();
-          } else {
-            alert("서버 연결 실패: 클라우드 방 생성 오류.");
-          }
-        })
-        .catch(err => {
-          alert("네트워크 연결 실패: " + err.message);
-        });
+    // ============================================================
+    // Firebase Realtime Database 기반 실시간 클라우드 동기화 시스템
+    // ============================================================
+    let firebaseApp = null;
+    let firebaseDB = null;
+    let roomRef = null;
+    let syncDebounceTimer = null;
+    let suppressNextPush = false; // 원격 수신 직후의 재전송(피드백 루프) 방지 플래그
+
+    function getClientId() {
+      let id = localStorage.getItem('tirnanog_client_id');
+      if (!id) {
+        id = 'client_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+        localStorage.setItem('tirnanog_client_id', id);
+      }
+      return id;
+    }
+
+    function updateSyncStatus(status) {
+      const el = document.getElementById('sync-status-badge');
+      if (!el) return;
+      const map = {
+        connected:    ['🟢 실시간 연결됨',       '#2e7d32'],
+        synced:       ['🟢 저장 완료',           '#2e7d32'],
+        received:     ['🔵 실시간 업데이트 수신', 'var(--primary-color)'],
+        error:        ['🔴 연결 오류',           'var(--danger-color)'],
+        disconnected: ['⚪ 미연결',              'var(--text-muted)'],
+        nofirebase:   ['⚠️ Firebase 설정 필요',  'var(--danger-color)']
+      };
+      const [text, color] = map[status] || map.disconnected;
+      el.innerText = text;
+      el.style.color = color;
+    }
+
+    function initFirebase() {
+      if (firebaseDB) return true;
+      if (typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.includes('YOUR_')) {
+        updateSyncStatus('nofirebase');
+        return false;
+      }
+      try {
+        firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+        firebaseDB = firebase.database();
+        return true;
+      } catch (e) {
+        console.error("[Everafter] Firebase 초기화 실패:", e);
+        updateSyncStatus('error');
+        return false;
       }
     }
 
+    // 로컬 상태를 실시간 방에 업로드 (자동 호출, 디바운스 적용)
+    function pushToRealtime() {
+      if (!roomRef) return;
+      if (suppressNextPush) { suppressNextPush = false; return; }
+      clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        roomRef.set({
+          data: state,
+          updatedBy: getClientId(),
+          updatedAt: Date.now()
+        }).then(() => {
+          updateSyncStatus('synced');
+        }).catch(err => {
+          console.error("[Everafter] 실시간 저장 실패:", err);
+          updateSyncStatus('error');
+        });
+      }, 500);
+    }
+
+    // 즉시(디바운스 없이) 강제 업로드
+    function pushToRealtimeNow() {
+      if (!roomRef) return Promise.reject(new Error("연결된 방이 없습니다."));
+      return roomRef.set({
+        data: state,
+        updatedBy: getClientId(),
+        updatedAt: Date.now()
+      });
+    }
+
+    // 특정 방에 연결 + 실시간 수신 리스너 등록
+    function connectToRoom(roomKey, opts) {
+      opts = opts || {};
+      if (!roomKey) {
+        if (!opts.silent) alert("방 키를 입력해 주세요.");
+        return false;
+      }
+      if (!firebaseDB && !initFirebase()) {
+        if (!opts.silent) alert("Firebase 설정이 되어있지 않습니다.\nEverafter_firebase-config.js 파일에 프로젝트 값을 입력했는지 확인해 주세요.");
+        return false;
+      }
+
+      if (roomRef) roomRef.off(); // 기존 리스너 해제
+
+      roomRef = firebaseDB.ref('rooms/' + roomKey);
+      localStorage.setItem('tirnanog_cloud_key', roomKey);
+      const input = document.getElementById('cloud-room-input');
+      if (input) input.value = roomKey;
+
+      roomRef.on('value', (snapshot) => {
+        const payload = snapshot.val();
+        if (!payload || !payload.data) return;
+        if (payload.updatedBy === getClientId()) return; // 내가 방금 쓴 값은 무시 (루프 방지)
+        suppressNextPush = true;
+        state = payload.data;
+        localStorage.setItem('tirnanog_state', JSON.stringify(state));
+        updateUI();
+        updateSyncStatus('received');
+      }, (err) => {
+        console.error("[Everafter] 실시간 수신 오류:", err);
+        updateSyncStatus('error');
+      });
+
+      updateSyncStatus('connected');
+      return true;
+    }
+
+    function generateCloudRoom() {
+      if (!confirm("새로운 실시간 동기화 방을 생성하시겠습니까?\n생성 즉시 현재 대시보드 데이터가 그 방의 초기값으로 업로드됩니다.")) return;
+
+      if (!firebaseDB && !initFirebase()) {
+        alert("Firebase 설정이 되어있지 않습니다.\nEverafter_firebase-config.js 파일에 프로젝트 값을 입력했는지 확인해 주세요.");
+        return;
+      }
+
+      const roomKey = 'TN-' + Math.random().toString(36).slice(2, 8).toUpperCase();
+      if (!connectToRoom(roomKey, { silent: true })) return;
+
+      pushToRealtimeNow()
+        .then(() => {
+          alert(`새 동기화 방이 생성되었습니다!\n방 키: ${roomKey}\n\n이 키를 다른 운영진에게 전달하고, 각자 방 키를 입력한 뒤 "이 방에 연결" 버튼을 누르면 실시간으로 데이터가 공유됩니다.`);
+        })
+        .catch(err => alert("초기 업로드 실패: " + err.message));
+    }
+
+    // 이미 발급된 방 키로 합류 (다른 운영진용)
+    function joinCloudRoom() {
+      const roomKey = document.getElementById('cloud-room-input').value.trim();
+      if (!roomKey) {
+        alert("전달받은 방 키를 입력해 주세요.");
+        return;
+      }
+      if (!connectToRoom(roomKey)) return;
+      alert(`동기화 방 [${roomKey}]에 연결되었습니다.\n이제부터 변경사항이 실시간으로 자동 공유됩니다.`);
+    }
+
+    // 수동 강제 업로드 (비상용)
     function uploadToCloud() {
       const roomKey = document.getElementById('cloud-room-input').value.trim();
       if (!roomKey) {
         alert("저장할 클라우드 방 키가 없습니다. 먼저 방을 생성하거나 전달받은 방 키를 입력하세요.");
         return;
       }
-
-      localStorage.setItem('tirnanog_cloud_key', roomKey);
+      if (!roomRef || roomRef.key !== roomKey) {
+        if (!connectToRoom(roomKey, { silent: true })) return;
+      }
 
       const btn = document.querySelector('[onclick="uploadToCloud()"]');
       const origText = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 저장 중...';
       btn.disabled = true;
 
-      fetch(`https://api.npoint.io/${roomKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(state)
-      })
-      .then(response => {
-        if (response.ok) {
-          alert("클라우드 저장 성공! 현재 대시보드 판도가 서버에 안전하게 기록되었습니다.");
-        } else {
-          alert("서버 저장 실패: 유효하지 않은 방 키이거나 서버 오류입니다.");
-        }
-      })
-      .catch(err => {
-        alert("네트워크 통신 에러: " + err.message);
-      })
-      .finally(() => {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-      });
+      pushToRealtimeNow()
+        .then(() => alert("클라우드 저장 성공! 현재 대시보드 판도가 실시간 방에 즉시 반영되었습니다."))
+        .catch(err => alert("서버 저장 실패: " + err.message))
+        .finally(() => {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+        });
     }
 
+    // 수동 강제 다운로드 (비상용)
     function downloadFromCloud() {
       const roomKey = document.getElementById('cloud-room-input').value.trim();
       if (!roomKey) {
         alert("불러올 클라우드 방 키가 없습니다. 연동할 방 키를 입력해 주세요.");
         return;
       }
-
-      localStorage.setItem('tirnanog_cloud_key', roomKey);
+      if (!firebaseDB && !initFirebase()) {
+        alert("Firebase 설정이 되어있지 않습니다.\nEverafter_firebase-config.js 파일에 프로젝트 값을 입력했는지 확인해 주세요.");
+        return;
+      }
 
       const btn = document.querySelector('[onclick="downloadFromCloud()"]');
       const origText = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 동기화 중...';
       btn.disabled = true;
 
-      fetch(`https://api.npoint.io/${roomKey}`)
-      .then(response => {
-        if (!response.ok) throw new Error("서버 에러 또는 방 키가 존재하지 않음");
-        return response.json();
-      })
-      .then(cloudState => {
-        if (cloudState && cloudState.season) {
-          if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
-            state = cloudState;
-            saveToLocalStorage();
-            alert("동기화 성공! 클라우드의 최신 판도로 대시보드가 성공적으로 동기화되었습니다.");
+      firebaseDB.ref('rooms/' + roomKey).get()
+        .then(snapshot => {
+          const payload = snapshot.val();
+          if (payload && payload.data) {
+            if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
+              suppressNextPush = true;
+              state = payload.data;
+              saveToLocalStorage();
+              if (!roomRef || roomRef.key !== roomKey) connectToRoom(roomKey, { silent: true });
+              alert("동기화 성공! 클라우드의 최신 판도로 대시보드가 성공적으로 동기화되었습니다.");
+            }
+          } else {
+            alert("불러온 데이터가 비어 있거나 손상되었습니다. 방에 데이터가 업로드되었는지 확인해 주세요.");
           }
-        } else {
-          alert("불러온 데이터가 비어 있거나 손상되었습니다. 방에 데이터가 업로드되었는지 확인해 주세요.");
-        }
-      })
-      .catch(err => {
-        alert("불러오기 실패: " + err.message);
-      })
-      .finally(() => {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-      });
+        })
+        .catch(err => alert("불러오기 실패: " + err.message))
+        .finally(() => {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+        });
     }
 
     window.onload = function() {
       loadFromLocalStorage();
       updateUI();
+
+      // Firebase 실시간 동기화 초기화 및 자동 재연결
+      initFirebase();
+      const savedRoomKey = localStorage.getItem('tirnanog_cloud_key');
+      if (savedRoomKey && firebaseDB) {
+        connectToRoom(savedRoomKey, { silent: true });
+      } else if (!firebaseDB) {
+        updateSyncStatus('nofirebase');
+      } else {
+        updateSyncStatus('disconnected');
+      }
+
       // Show welcome modal once per session
       if (!sessionStorage.getItem('tirnanog_welcome_shown')) {
         openModal('welcome-modal');

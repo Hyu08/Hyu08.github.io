@@ -488,11 +488,11 @@
         <!-- Cloud Sync room -->
         <div class="panel" style="border-color: var(--primary-color); box-shadow: var(--glow-light);">
           <div class="panel-title">
-            <span style="color: var(--primary-color);"><i class="fa-solid fa-cloud"></i> 1초 간편 클라우드 동기화 (운영진 공유망)</span>
-            <i class="fa-solid fa-rotate" style="color: var(--primary-color);"></i>
+            <span style="color: var(--primary-color);"><i class="fa-solid fa-cloud"></i> 실시간 클라우드 동기화 (운영진 공유망)</span>
+            <span id="sync-status-badge" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">⚪ 미연결</span>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 6px;">
-            복잡한 백업 파일 복사 없이, 짧은 방 키(Room Key) 하나만으로 4명의 운영진이 실시간 연동하여 데이터를 주고받을 수 있습니다.
+            짧은 방 키(Room Key) 하나로 운영진 전원이 실시간 연동됩니다. 누군가 데이터를 바꾸면 클릭 없이 다른 사람 화면에도 자동으로 반영됩니다.
           </p>
           <div style="display: grid; grid-template-columns: 1fr 200px; gap: 12px; align-items: flex-end;">
             <div class="form-group" style="margin: 0;">
@@ -502,9 +502,15 @@
             <button class="btn btn-primary" style="height: 42px; justify-content: center;" onclick="generateCloudRoom()"><i class="fa-solid fa-plus-circle"></i> 새 동기화 방 생성</button>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <button class="btn btn-success" style="flex:1; justify-content: center; height: 38px;" onclick="uploadToCloud()"><i class="fa-solid fa-cloud-arrow-up"></i> 현재 판도를 클라우드에 저장 (Upload)</button>
-            <button class="btn" style="flex:1; justify-content: center; height: 38px; border-color: var(--secondary-color); color: var(--secondary-color);" onclick="downloadFromCloud()"><i class="fa-solid fa-cloud-arrow-down"></i> 클라우드 최신 판도 불러오기 (Download)</button>
+            <button class="btn btn-success" style="flex:1; justify-content: center; height: 38px;" onclick="joinCloudRoom()"><i class="fa-solid fa-plug"></i> 이 방에 연결 (Join)</button>
           </div>
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="btn" style="flex:1; justify-content: center; height: 34px; font-size: 0.8rem; border-color: var(--secondary-color); color: var(--secondary-color);" onclick="uploadToCloud()"><i class="fa-solid fa-cloud-arrow-up"></i> 강제 업로드 (비상용)</button>
+            <button class="btn" style="flex:1; justify-content: center; height: 34px; font-size: 0.8rem; border-color: var(--secondary-color); color: var(--secondary-color);" onclick="downloadFromCloud()"><i class="fa-solid fa-cloud-arrow-down"></i> 강제 다운로드 (비상용)</button>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+            💡 방을 처음 만드는 사람만 "새 동기화 방 생성"을 누르세요. 나머지 인원은 전달받은 방 키를 입력하고 "이 방에 연결"만 누르면 됩니다. 이후에는 자동으로 실시간 반영됩니다.
+          </p>
         </div>
 
         <!-- Event triggers moved to tab-logger -->
@@ -778,6 +784,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Firebase Realtime Sync (실시간 클라우드 동기화) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="Everafter_firebase-config.js"></script>
 
   <!-- Core JavaScript Logic -->
   <script src="Everafter_data.js"></script>
