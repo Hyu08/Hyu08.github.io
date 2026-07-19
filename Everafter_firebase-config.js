@@ -11,7 +11,7 @@
 // 4) 화면에 표시되는 firebaseConfig 객체의 값을 아래에 그대로 복사해 넣으세요.
 // ============================================================
 
-const firebaseConfig = {
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBqkuNNk0lRbSxm3fYIywTJmIrzstXl-oQ",
   authDomain: "everlight-60a56.firebaseapp.com",
   databaseURL: "https://everlight-60a56-default-rtdb.asia-southeast1.firebasedatabase.app",
