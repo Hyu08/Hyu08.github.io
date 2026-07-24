@@ -44,8 +44,68 @@
       infrastructures: JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES)),
       characters: [],
       activeEvents: [],
-      logs: []
+      logs: [],
+      scripts: JSON.parse(JSON.stringify(RANDOM_SCRIPTS)),
+      endingConfig: {
+        thresholds: JSON.parse(JSON.stringify(DEFAULT_ENDING_THRESHOLDS)),
+        scripts: JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS))
+      }
     };
+
+    // 기반시설별 몰입 스크립트 세트를 항상 사용 가능한 상태로 보정합니다.
+    // (state.scripts가 없거나, 새 기반시설/기수 키가 기본 데이터에 추가된 경우를 대비)
+    function ensureScriptState() {
+      if (!state.scripts) state.scripts = {};
+      Object.keys(RANDOM_SCRIPTS).forEach(infraId => {
+        if (!state.scripts[infraId]) {
+          state.scripts[infraId] = JSON.parse(JSON.stringify(RANDOM_SCRIPTS[infraId]));
+        } else {
+          ['season1', 'season2'].forEach(seasonKey => {
+            if (!Array.isArray(state.scripts[infraId][seasonKey])) {
+              state.scripts[infraId][seasonKey] = JSON.parse(JSON.stringify(RANDOM_SCRIPTS[infraId][seasonKey] || []));
+            }
+          });
+        }
+      });
+    }
+
+    // 엔딩 분기점(임계값) 및 엔딩별 결산 스크립트를 항상 사용 가능한 상태로 보정합니다.
+    function ensureEndingConfigState() {
+      if (!state.endingConfig) state.endingConfig = {};
+
+      if (!state.endingConfig.thresholds) {
+        state.endingConfig.thresholds = JSON.parse(JSON.stringify(DEFAULT_ENDING_THRESHOLDS));
+      } else {
+        Object.keys(DEFAULT_ENDING_THRESHOLDS).forEach(key => {
+          if (typeof state.endingConfig.thresholds[key] !== 'number' || isNaN(state.endingConfig.thresholds[key])) {
+            state.endingConfig.thresholds[key] = DEFAULT_ENDING_THRESHOLDS[key];
+          }
+        });
+      }
+
+      if (!state.endingConfig.scripts) {
+        state.endingConfig.scripts = JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS));
+      } else {
+        Object.keys(DEFAULT_ENDING_SCRIPTS).forEach(id => {
+          if (!state.endingConfig.scripts[id]) {
+            state.endingConfig.scripts[id] = JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS[id]));
+          } else {
+            if (typeof state.endingConfig.scripts[id].title !== 'string') {
+              state.endingConfig.scripts[id].title = DEFAULT_ENDING_SCRIPTS[id].title;
+            }
+            if (typeof state.endingConfig.scripts[id].desc !== 'string') {
+              state.endingConfig.scripts[id].desc = DEFAULT_ENDING_SCRIPTS[id].desc;
+            }
+          }
+        });
+      }
+    }
+
+    // 스크립트/엔딩 설정을 한 번에 보정하는 통합 헬퍼 (state 전체 교체 시점마다 호출)
+    function ensureConfigState() {
+      ensureScriptState();
+      ensureEndingConfigState();
+    }
 
     function getEventTemplates() {
       const custom = state.customEvents || [];
@@ -180,7 +240,12 @@
       updateUI();
     }
 
-    function getPredictedEnding() {
+    // 엔딩 판정 핵심 로직 (분기점 임계값 및 엔딩 스크립트는 state.endingConfig를 따릅니다)
+    function computeEndingResult() {
+      ensureEndingConfigState();
+      const th = state.endingConfig.thresholds;
+      const scripts = state.endingConfig.scripts;
+
       let totalStability = 0;
       let totalRevolution = 0;
       let totalForce = 0;
@@ -199,14 +264,24 @@
       });
 
       const totalAP = totalStability + totalRevolution;
-      if (totalAP === 0) return "투자 데이터 기록 없음 (결산 대기)";
+
+      if (totalAP === 0) {
+        return {
+          id: null,
+          title: '판도 분석 불가능',
+          desc: '누적 데이터가 없어 결산할 수 없습니다.',
+          totalStability: 0, totalRevolution: 0, totalForce: 0, totalOrder: 0, totalIdeology: 0, totalWelfare: 0,
+          totalAP: 0, marginPercent: 0
+        };
+      }
 
       const diff = Math.abs(totalStability - totalRevolution);
       const marginPercent = (diff / totalAP) * 100;
 
-      if (marginPercent < 5) {
-        return "⚠️ [파국] 영원한 긴 밤의 고착화";
-      } 
+      let id;
+      if (marginPercent < th.deadlockMarginPercent) {
+        id = 'deadlock';
+      }
       else if (totalStability > totalRevolution) {
         const sForce = getEffectiveAP("guard");
         const sOrder = getEffectiveAP("nobles") + getEffectiveAP("academy");
@@ -214,12 +289,12 @@
         const sWelfare = getEffectiveAP("admin");
         const sTotal = sForce + sOrder + sIdeology + sWelfare;
 
-        if (sTotal < 150) return "⌛ [보수] 정체와 서서히 추락하는 하늘섬";
-        if (sForce > sTotal * 0.45) return "🚨 [보수] 군사 계엄 및 철권 특별재판부";
-        if (sOrder > sTotal * 0.45) return "🚨 [보수/규율] 관료제적 기계 통제국가";
-        if (sWelfare + sIdeology > sTotal * 0.50) return "🏆 [보수/명예] 질서와 평화의 낙원";
-        return "⚖️ [보수] 규율과 안정의 지속";
-      } 
+        if (sTotal < th.minInfraTotal) id = 'stab_low';
+        else if (sForce > sTotal * th.dominantAttrRatio) id = 'stab_force';
+        else if (sOrder > sTotal * th.dominantAttrRatio) id = 'stab_order';
+        else if (sWelfare + sIdeology > sTotal * th.welfareIdeologyRatio) id = 'stab_welfare';
+        else id = 'stab_default';
+      }
       else {
         const rForce = getEffectiveAP("port") + getEffectiveAP("crews");
         const rOrder = getEffectiveAP("union");
@@ -227,12 +302,35 @@
         const rWelfare = getEffectiveAP("community") + getEffectiveAP("workshop");
         const rTotal = rForce + rOrder + rIdeology + rWelfare;
 
-        if (rTotal < 150) return "⌛ [혁명] 미완의 혁명과 군벌의 난립";
-        if (rForce > rTotal * 0.45) return "🚨 [혁명] 단두대와 보복의 붉은 광장";
-        if (rOrder > rTotal * 0.45) return "🚨 [혁명/규율] 통제된 조합주의 배급체제";
-        if (rWelfare + rIdeology > rTotal * 0.50) return "🏆 [혁명/명예] 자유와 평등의 공화정";
-        return "⚖️ [혁명] 새로운 지배 구도의 수립";
+        if (rTotal < th.minInfraTotal) id = 'rev_low';
+        else if (rForce > rTotal * th.dominantAttrRatio) id = 'rev_force';
+        else if (rOrder > rTotal * th.dominantAttrRatio) id = 'rev_order';
+        else if (rWelfare + rIdeology > rTotal * th.welfareIdeologyRatio) id = 'rev_welfare';
+        else id = 'rev_default';
       }
+
+      const script = (scripts && scripts[id]) || DEFAULT_ENDING_SCRIPTS[id] || { title: id, desc: '' };
+
+      return {
+        id: id,
+        title: script.title,
+        desc: script.desc,
+        totalStability: totalStability,
+        totalRevolution: totalRevolution,
+        totalForce: totalForce,
+        totalOrder: totalOrder,
+        totalIdeology: totalIdeology,
+        totalWelfare: totalWelfare,
+        totalAP: totalAP,
+        marginPercent: marginPercent
+      };
+    }
+
+    function getPredictedEnding() {
+      const result = computeEndingResult();
+      if (result.totalAP === 0) return "투자 데이터 기록 없음 (결산 대기)";
+      // 실시간 예측 표시용 짧은 제목 (괄호 안 영문 부제는 생략)
+      return result.title.replace(/\s*\([^)]*\)\s*$/, '');
     }
 
     function settleCurrentDay() {
@@ -316,22 +414,35 @@
       state.day = Math.min(4, state.day + 1);
       saveToLocalStorage();
       updateUI();
-      alert(`성공적으로 DAY ${state.day} 일차로 전환되었습니다.`);
+      resetDailyActionPoints();
+      alert(`성공적으로 DAY ${state.day} 일차로 전환되었습니다. 모든 캐릭터의 행동력이 ${DAILY_AP_LIMIT} AP로 초기화되었습니다.`);
     }
 
-    function showRandomScriptPopup(infraId, charName, baseAP, finalAP) {
+    function showRandomScriptPopup(infraId, charName, baseAP, finalAP, isCritical) {
       const infra = state.infrastructures.find(i => i.id === infraId);
       if (!infra) return;
-      const scriptSetObj = RANDOM_SCRIPTS[infraId];
+      ensureScriptState();
+      const scriptSetObj = (state.scripts && state.scripts[infraId]) || RANDOM_SCRIPTS[infraId];
       if (!scriptSetObj) return;
 
       const list = state.season === 1 ? scriptSetObj.season1 : scriptSetObj.season2;
       const randIdx = Math.floor(Math.random() * list.length);
       const chosenScript = list[randIdx];
 
-      lastGeneratedScript = `[${state.season}기 Day ${state.day}] ${charName} 캐릭터 ➔ ${infra.name} 투자 활동 결과:\n\n"${chosenScript}"`;
+      const critTag = isCritical ? " [크리티컬 대성공!]" : "";
+      lastGeneratedScript = `[${state.season}기 Day ${state.day}] ${charName} 캐릭터 ➔ ${infra.name} 투자 활동 결과${critTag}:\n\n"${chosenScript}"`;
+
+      let critBannerHTML = "";
+      if (isCritical) {
+        critBannerHTML = `
+          <div style="background: linear-gradient(135deg, #ff4e50, #f9d423); color: white; padding: 8px; border-radius: 6px; text-align: center; font-weight: 800; font-size: 0.82rem; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 8px rgba(255,78,80,0.4); display: flex; align-items: center; justify-content: center; gap: 6px; animation: blink 1.5s infinite;">
+            <i class="fa-solid fa-fire"></i> 대성공! CRITICAL SUCCESS! (+1.5배 AP 획득) <i class="fa-solid fa-fire"></i>
+          </div>
+        `;
+      }
 
       document.getElementById("script-popup-text").innerHTML = `
+        ${critBannerHTML}
         <strong>캐릭터명</strong>: ${charName}<br>
         <strong>투자 기반시설</strong>: ${infra.name}<br>
         <strong>소모한 행동력</strong>: ${baseAP} AP (반영: ${finalAP} AP)<br>
@@ -340,6 +451,7 @@
       `;
       openModal("script-popup-modal");
     }
+
 
     function copyPopupScript() {
       const txt = lastGeneratedScript;
@@ -414,9 +526,12 @@
             state.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
           }
           if (!state.customEvents) state.customEvents = [];
+          ensureConfigState();
         } catch (e) {
           console.error("LocalStorage load error: ", e);
         }
+      } else {
+        ensureConfigState();
       }
       const savedRoomKey = localStorage.getItem('tirnanog_cloud_key');
       if (savedRoomKey) {
@@ -437,6 +552,420 @@
       document.getElementById(tabId).classList.add('active');
       const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
       if (btn) btn.classList.add('active');
+
+      if (tabId === 'tab-scripts') renderScriptManager();
+      if (tabId === 'tab-endings') renderEndingManager();
+    }
+
+    // ============================================================
+    // 몰입 스크립트 관리 (Random Immersion Script Manager)
+    // ============================================================
+
+    function renderScriptManager() {
+      const container = document.getElementById('script-manager-container');
+      if (!container) return;
+
+      ensureScriptState();
+      container.innerHTML = '';
+
+      state.infrastructures.forEach(infra => {
+        const scriptSet = state.scripts[infra.id];
+        if (!scriptSet) return;
+
+        const panel = document.createElement('div');
+        panel.className = 'panel';
+        panel.style.marginBottom = '1.2rem';
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'panel-title';
+
+        const titleSpan = document.createElement('span');
+        const factionColor = infra.faction === 'stability' ? '#3366cc' : '#dc3545';
+        titleSpan.innerHTML = `<i class="fa-solid ${infra.faction === 'stability' ? 'fa-landmark' : 'fa-fist-raised'}" style="color:${factionColor};"></i> ${infra.name}`;
+
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'btn';
+        resetBtn.style.cssText = 'font-size:0.72rem; height:auto; padding:4px 10px;';
+        resetBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> 기본값 복원';
+        resetBtn.onclick = () => resetScriptsForInfra(infra.id);
+
+        titleRow.appendChild(titleSpan);
+        titleRow.appendChild(resetBtn);
+        panel.appendChild(titleRow);
+
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid; grid-template-columns: 1fr 1fr; gap:1.2rem; margin-top:0.8rem;';
+
+        [
+          { key: 'season1', label: '1기 (에버라이트) 스크립트' },
+          { key: 'season2', label: '2기 (에버나이트) 스크립트' }
+        ].forEach(seasonInfo => {
+          const col = document.createElement('div');
+
+          const label = document.createElement('h4');
+          label.style.cssText = 'font-size:0.82rem; font-weight:700; margin-bottom:8px; color: var(--text-muted);';
+          label.textContent = seasonInfo.label;
+          col.appendChild(label);
+
+          const list = scriptSet[seasonInfo.key] || [];
+          list.forEach((scriptText, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; gap:6px; margin-bottom:8px; align-items:flex-start;';
+
+            const ta = document.createElement('textarea');
+            ta.className = 'form-control';
+            ta.style.cssText = 'flex:1; min-height:60px; font-size:0.82rem; line-height:1.4; resize:vertical;';
+            ta.value = scriptText;
+            ta.addEventListener('change', (e) => updateScriptText(infra.id, seasonInfo.key, idx, e.target.value));
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn btn-danger';
+            delBtn.style.cssText = 'height:34px; padding:0 10px; font-size:0.75rem; align-self:flex-start;';
+            delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+            delBtn.title = '이 스크립트 삭제';
+            delBtn.onclick = () => removeScriptLine(infra.id, seasonInfo.key, idx);
+
+            row.appendChild(ta);
+            row.appendChild(delBtn);
+            col.appendChild(row);
+          });
+
+          const addBtn = document.createElement('button');
+          addBtn.className = 'btn';
+          addBtn.style.cssText = 'width:100%; justify-content:center; font-size:0.78rem; height:34px; margin-top:2px;';
+          addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> 스크립트 추가';
+          addBtn.onclick = () => addScriptLine(infra.id, seasonInfo.key);
+          col.appendChild(addBtn);
+
+          grid.appendChild(col);
+        });
+
+        panel.appendChild(grid);
+        container.appendChild(panel);
+      });
+    }
+
+    function updateScriptText(infraId, seasonKey, idx, value) {
+      ensureScriptState();
+      if (!state.scripts[infraId][seasonKey]) state.scripts[infraId][seasonKey] = [];
+      state.scripts[infraId][seasonKey][idx] = value;
+      saveToLocalStorage();
+    }
+
+    function addScriptLine(infraId, seasonKey) {
+      ensureScriptState();
+      if (!state.scripts[infraId][seasonKey]) state.scripts[infraId][seasonKey] = [];
+      state.scripts[infraId][seasonKey].push('새로운 스크립트를 입력하세요.');
+      saveToLocalStorage();
+      renderScriptManager();
+    }
+
+    function removeScriptLine(infraId, seasonKey, idx) {
+      ensureScriptState();
+      const list = state.scripts[infraId][seasonKey];
+      if (!list || list.length === 0) return;
+      if (list.length <= 1) {
+        alert('최소 1개의 스크립트는 남아있어야 합니다.');
+        return;
+      }
+      if (!confirm('이 스크립트를 삭제하시겠습니까?')) return;
+      list.splice(idx, 1);
+      saveToLocalStorage();
+      renderScriptManager();
+    }
+
+    function resetScriptsForInfra(infraId) {
+      if (!RANDOM_SCRIPTS[infraId]) return;
+      const infra = state.infrastructures.find(i => i.id === infraId);
+      const infraName = infra ? infra.name : infraId;
+      if (!confirm(`"${infraName}"의 스크립트를 기본값으로 되돌리시겠습니까?\n저장된 커스텀 스크립트는 모두 사라집니다.`)) return;
+      ensureScriptState();
+      state.scripts[infraId] = JSON.parse(JSON.stringify(RANDOM_SCRIPTS[infraId]));
+      saveToLocalStorage();
+      renderScriptManager();
+    }
+
+    // ============================================================
+    // 엔딩 분기점(임계값) 및 엔딩 스크립트 관리 (Ending Branch Manager)
+    // ============================================================
+
+    const ENDING_ID_GROUPS = [
+      { key: '⚠️ 공통 분기 (교착)', ids: ['deadlock'] },
+      { key: '🏛️ 보수 세력 승리 엔딩', ids: ['stab_low', 'stab_force', 'stab_order', 'stab_welfare', 'stab_default'] },
+      { key: '🔥 혁명 세력 승리 엔딩', ids: ['rev_low', 'rev_force', 'rev_order', 'rev_welfare', 'rev_default'] }
+    ];
+
+    function updateEndingThreshold(key, rawValue) {
+      ensureEndingConfigState();
+      const num = parseFloat(rawValue);
+      if (isNaN(num)) return;
+      state.endingConfig.thresholds[key] = num;
+      saveToLocalStorage();
+    }
+
+    function resetEndingThresholds() {
+      if (!confirm('엔딩 분기점(임계값)을 모두 기본값으로 되돌리시겠습니까?')) return;
+      ensureEndingConfigState();
+      state.endingConfig.thresholds = JSON.parse(JSON.stringify(DEFAULT_ENDING_THRESHOLDS));
+      saveToLocalStorage();
+      renderEndingManager();
+    }
+
+    function updateEndingScriptField(endingId, field, value) {
+      ensureEndingConfigState();
+      if (!state.endingConfig.scripts[endingId]) {
+        state.endingConfig.scripts[endingId] = JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS[endingId] || { title: '', desc: '' }));
+      }
+      state.endingConfig.scripts[endingId][field] = value;
+      saveToLocalStorage();
+    }
+
+    function resetEndingScript(endingId) {
+      if (!DEFAULT_ENDING_SCRIPTS[endingId]) return;
+      if (!confirm('이 엔딩의 제목/설명 스크립트를 기본값으로 되돌리시겠습니까?')) return;
+      ensureEndingConfigState();
+      state.endingConfig.scripts[endingId] = JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS[endingId]));
+      saveToLocalStorage();
+      renderEndingManager();
+    }
+
+    function renderEndingManager() {
+      ensureEndingConfigState();
+      const th = state.endingConfig.thresholds;
+
+      // 1. 분기점(임계값) 입력 필드 값 동기화 (입력 중인 필드는 건드리지 않음)
+      const thContainer = document.getElementById('ending-threshold-container');
+      if (thContainer) {
+        thContainer.querySelectorAll('input[data-th-key]').forEach(inp => {
+          const key = inp.dataset.thKey;
+          if (document.activeElement !== inp && th[key] !== undefined) {
+            inp.value = th[key];
+          }
+        });
+      }
+
+      // 2. 엔딩별 스크립트 카드 렌더링
+      const container = document.getElementById('ending-script-manager-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      ENDING_ID_GROUPS.forEach(group => {
+        const groupTitle = document.createElement('h4');
+        groupTitle.style.cssText = 'font-size:0.92rem; font-weight:800; margin: 1.4rem 0 0.7rem; color: var(--text-main);';
+        groupTitle.textContent = group.key;
+        container.appendChild(groupTitle);
+
+        group.ids.forEach(id => {
+          const script = state.endingConfig.scripts[id] || DEFAULT_ENDING_SCRIPTS[id];
+          const meta = ENDING_META[id];
+
+          const panel = document.createElement('div');
+          panel.className = 'panel';
+          panel.style.marginBottom = '1rem';
+
+          const titleRow = document.createElement('div');
+          titleRow.className = 'panel-title';
+
+          const condSpan = document.createElement('span');
+          condSpan.style.cssText = 'font-size:0.78rem; color: var(--text-muted); font-weight:600; line-height:1.4;';
+          condSpan.textContent = meta ? meta.condition : '';
+
+          const resetBtn = document.createElement('button');
+          resetBtn.className = 'btn';
+          resetBtn.style.cssText = 'font-size:0.72rem; height:auto; padding:4px 10px; flex-shrink:0;';
+          resetBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> 기본값 복원';
+          resetBtn.onclick = () => resetEndingScript(id);
+
+          titleRow.appendChild(condSpan);
+          titleRow.appendChild(resetBtn);
+          panel.appendChild(titleRow);
+
+          const titleLabel = document.createElement('label');
+          titleLabel.style.cssText = 'font-size:0.78rem; font-weight:700; margin-top:10px; display:block;';
+          titleLabel.textContent = '엔딩 제목';
+          panel.appendChild(titleLabel);
+
+          const titleInput = document.createElement('input');
+          titleInput.type = 'text';
+          titleInput.className = 'form-control';
+          titleInput.style.cssText = 'margin-bottom:10px; font-weight:700;';
+          titleInput.value = script.title;
+          titleInput.addEventListener('change', (e) => updateEndingScriptField(id, 'title', e.target.value));
+          panel.appendChild(titleInput);
+
+          const descLabel = document.createElement('label');
+          descLabel.style.cssText = 'font-size:0.78rem; font-weight:700; display:block;';
+          descLabel.textContent = '엔딩 설명 (결산 시 출력되는 스크립트)';
+          panel.appendChild(descLabel);
+
+          const descTa = document.createElement('textarea');
+          descTa.className = 'form-control';
+          descTa.style.cssText = 'min-height:96px; font-size:0.82rem; line-height:1.55; resize:vertical;';
+          descTa.value = script.desc;
+          descTa.addEventListener('change', (e) => updateEndingScriptField(id, 'desc', e.target.value));
+          panel.appendChild(descTa);
+
+          container.appendChild(panel);
+        });
+      });
+    }
+
+    // ============================================================
+    // 시나리오 엔딩 도감(가이드북) 실시간 동기화 렌더러
+    // 엔딩 관리 탭에서 수정한 분기점(임계값)/엔딩 스크립트가 그대로 반영됩니다.
+    // ============================================================
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function getEndingConditionShort(id, th) {
+      const pct = v => parseFloat((v * 100).toFixed(1));
+      switch (id) {
+        case 'deadlock':     return `조건: 양 세력 격차 ${th.deadlockMarginPercent}% 미만`;
+        case 'stab_low':     return `조건: 보수 AP 합계 ${th.minInfraTotal} 미만`;
+        case 'stab_force':   return `조건: 보수 내 무력(Force) 비중 > ${pct(th.dominantAttrRatio)}%`;
+        case 'stab_order':   return `조건: 보수 내 규율(Order) 비중 > ${pct(th.dominantAttrRatio)}%`;
+        case 'stab_welfare': return `조건: 보수 내 상생(Welfare)+이념(Ideology) 비중 > ${pct(th.welfareIdeologyRatio)}%`;
+        case 'stab_default': return '조건: 보수 승리 기본 상태';
+        case 'rev_low':      return `조건: 혁명 AP 합계 ${th.minInfraTotal} 미만`;
+        case 'rev_force':    return `조건: 혁명 내 무력(Force) 비중 > ${pct(th.dominantAttrRatio)}%`;
+        case 'rev_order':    return `조건: 혁명 내 규율(Order) 비중 > ${pct(th.dominantAttrRatio)}%`;
+        case 'rev_welfare':  return `조건: 혁명 내 상생(Welfare)+이념(Ideology) 비중 > ${pct(th.welfareIdeologyRatio)}%`;
+        case 'rev_default':  return '조건: 혁명 승리 기본 상태';
+        default: return '';
+      }
+    }
+
+    function renderEndingGuidebook() {
+      const body = document.getElementById('ending-guide-dynamic-body');
+      if (!body) return;
+      ensureEndingConfigState();
+      const th = state.endingConfig.thresholds;
+      const scripts = state.endingConfig.scripts;
+
+      const groups = [
+        { label: '공통 / 양 진영 교착 판정 (1종)', color: '#e0a82e', ids: ['deadlock'] },
+        { label: `보수 세력 승리 분기 (스카이본[1기] / 스카이가드[2기] 승리, 격차 ${th.deadlockMarginPercent}% 이상)`, color: 'var(--accent-skyborn)', ids: ['stab_low', 'stab_force', 'stab_order', 'stab_welfare', 'stab_default'] },
+        { label: `혁명 세력 승리 분기 (스카이웨일[1기] / 나이트워커[2기] 승리, 격차 ${th.deadlockMarginPercent}% 이상)`, color: 'var(--accent-whale)', ids: ['rev_low', 'rev_force', 'rev_order', 'rev_welfare', 'rev_default'] }
+      ];
+
+      body.innerHTML = groups.map(group => `
+        <div>
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: ${group.color}; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-family: var(--font-title);">
+            <span style="display:inline-block; width: 4px; height: 14px; background: ${group.color}; border-radius: 2px;"></span>
+            ${group.label}
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${group.ids.map(id => {
+              const sc = (scripts && scripts[id]) || DEFAULT_ENDING_SCRIPTS[id] || { title: id, desc: '' };
+              return `
+                <div style="background: rgba(0,0,0,0.03); border: var(--card-border); padding: 12px; border-radius: 8px; font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; gap: 10px; font-weight: 700; margin-bottom: 4px; color: var(--text-main);">
+                    <span>${escapeHTML(sc.title)}</span>
+                    <span style="color: ${group.color}; flex-shrink: 0; text-align: right;">${getEndingConditionShort(id, th)}</span>
+                  </div>
+                  <div style="color: var(--text-muted); line-height: 1.5;">${escapeHTML(sc.desc)}</div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`).join('');
+    }
+
+    function openEndingGuide() {
+      renderEndingGuidebook();
+      openModal('ending-guide-modal');
+    }
+
+    // ============================================================
+    // 1기 에버라이트 최종 기록 열람 (읽기 전용 조회 콘솔)
+    // 2기 전환 후 고정 보존된 1기 데이터를 안전하게 확인합니다.
+    // ============================================================
+    function openSeason1Viewer() {
+      const container = document.getElementById('s1-view-content');
+      if (!container) return;
+
+      let s1Stab = 0, s1Rev = 0;
+      const attrTotals = { force: 0, order: 0, ideology: 0, welfare: 0 };
+      const infraRows = [];
+
+      state.infrastructures.forEach(infra => {
+        let raw = 0;
+        state.logs.forEach(log => {
+          if (log.infraId === infra.id && log.season === 1) raw += log.ap;
+        });
+        const mult = infra.faction === 'stability' ? s1StabMult : s1RevMult;
+        const eff = raw * mult;
+        if (infra.faction === 'stability') s1Stab += eff; else s1Rev += eff;
+        attrTotals[infra.attribute] += eff;
+        infraRows.push({ infra, raw, eff });
+      });
+
+      const s1Total = s1Stab + s1Rev;
+      const stabPct = s1Total > 0 ? (s1Stab / s1Total) * 100 : 50;
+      const revPct = s1Total > 0 ? (s1Rev / s1Total) * 100 : 50;
+
+      let countSkyborn = 0, countWhale = 0;
+      state.characters.forEach(c => {
+        if (c.startClass === 'Skyborn') countSkyborn++;
+        if (c.startClass === 'Whale') countWhale++;
+      });
+
+      const rowsHTML = infraRows.map(({ infra, raw, eff }) => `
+        <tr style="border-bottom: 1px dashed rgba(125,114,96,0.12);">
+          <td style="padding: 4px 8px; font-weight: 700; color: ${infra.faction === 'stability' ? '#3366cc' : '#dc3545'};">${infra.name}</td>
+          <td style="padding: 4px 8px; text-align: center;">${getKoreanAttribute(infra.attribute)}</td>
+          <td style="padding: 4px 8px; text-align: right; font-weight: 700;">${raw} AP</td>
+          <td style="padding: 4px 8px; text-align: right; color: var(--primary-color); font-weight: 700;">${Math.round(eff)} AP</td>
+        </tr>`).join('');
+
+      container.innerHTML = `
+        <div style="background: rgba(0,0,0,0.03); border: var(--card-border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+          <strong style="color: var(--primary-color);">⚖️ 1기 최종 세력 판도</strong>
+          <div class="balance-bar-container" style="height: 16px; border-radius: 8px; margin-top: 8px;">
+            <div class="balance-stability" style="width: ${stabPct}%;"></div>
+            <div class="balance-revolution" style="width: ${revPct}%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-top: 4px;">
+            <span style="color: #3366cc;">보수(스카이본) ${Math.round(s1Stab)} AP (${stabPct.toFixed(1)}%)</span>
+            <span style="color: #dc3545;">혁명(스카이웨일) ${Math.round(s1Rev)} AP (${revPct.toFixed(1)}%)</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+            Roster: 스카이본 ${countSkyborn}명 / 스카이웨일 ${countWhale}명 · 인원 보정 배율 - 보수 x${s1StabMult.toFixed(2)} / 혁명 x${s1RevMult.toFixed(2)}
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); border: var(--card-border); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+          <strong style="color: var(--secondary-color);">📊 1기 4대 속성 최종 지수 (보정 반영)</strong>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; margin-top: 8px; font-size: 0.82rem;">
+            <span>무력 (Force): <strong>${Math.round(attrTotals.force)} AP</strong></span>
+            <span>규율 (Order): <strong>${Math.round(attrTotals.order)} AP</strong></span>
+            <span>이념 (Ideology): <strong>${Math.round(attrTotals.ideology)} AP</strong></span>
+            <span>상생 (Welfare): <strong>${Math.round(attrTotals.welfare)} AP</strong></span>
+          </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.03); border: var(--card-border); padding: 12px; border-radius: 8px;">
+          <strong style="color: var(--primary-color);">🏛️ 1기 기반시설별 최종 누적 AP</strong>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.8rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(125,114,96,0.25); color: var(--text-muted);">
+                <th style="text-align: left; padding: 4px 8px;">기반시설</th>
+                <th style="text-align: center; padding: 4px 8px;">속성</th>
+                <th style="text-align: right; padding: 4px 8px;">누적(raw)</th>
+                <th style="text-align: right; padding: 4px 8px;">보정 반영</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+        </div>
+      `;
+
+      openModal('s1-view-modal');
     }
 
     function openModal(modalId) {
@@ -509,8 +1038,8 @@
         transBtn.className = 'btn btn-primary';
       } else {
         logoIcon.className = 'fa-solid fa-eye-radiation';
-        transBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> 1기 에버라이트로 복귀';
-        transBtn.setAttribute('onclick', 'revertToSeason1()');
+        transBtn.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> 1기 에버라이트 확인하기';
+        transBtn.setAttribute('onclick', 'openSeason1Viewer()');
         transBtn.className = 'btn';
       }
 
@@ -570,10 +1099,8 @@
       // 1. Season 1 calculations
       let s1Stability = 0;
       let s1Revolution = 0;
-      let totalForce = 0;
-      let totalOrder = 0;
-      let totalIdeology = 0;
-      let totalWelfare = 0;
+      let s1StabForce = 0, s1StabOrder = 0, s1StabIdeology = 0, s1StabWelfare = 0;
+      let s1RevForce = 0, s1RevOrder = 0, s1RevIdeology = 0, s1RevWelfare = 0;
       
       state.infrastructures.forEach(infra => {
         let s1Raw = 0;
@@ -588,14 +1115,19 @@
         });
         const mult = infra.faction === 'stability' ? s1StabMult : s1RevMult;
         const effectiveS1 = s1Raw * mult;
-        if (infra.faction === 'stability') s1Stability += effectiveS1;
-        else s1Revolution += effectiveS1;
-
-        // Add to attribute totals
-        if (infra.attribute === 'force') totalForce += effectiveS1;
-        if (infra.attribute === 'order') totalOrder += effectiveS1;
-        if (infra.attribute === 'ideology') totalIdeology += effectiveS1;
-        if (infra.attribute === 'welfare') totalWelfare += effectiveS1;
+        if (infra.faction === 'stability') {
+          s1Stability += effectiveS1;
+          if (infra.attribute === 'force') s1StabForce += effectiveS1;
+          if (infra.attribute === 'order') s1StabOrder += effectiveS1;
+          if (infra.attribute === 'ideology') s1StabIdeology += effectiveS1;
+          if (infra.attribute === 'welfare') s1StabWelfare += effectiveS1;
+        } else {
+          s1Revolution += effectiveS1;
+          if (infra.attribute === 'force') s1RevForce += effectiveS1;
+          if (infra.attribute === 'order') s1RevOrder += effectiveS1;
+          if (infra.attribute === 'ideology') s1RevIdeology += effectiveS1;
+          if (infra.attribute === 'welfare') s1RevWelfare += effectiveS1;
+        }
       });
 
       const s1Total = s1Stability + s1Revolution;
@@ -608,6 +1140,8 @@
       // 2. Season 2 calculations
       let s2Stability = 0;
       let s2Revolution = 0;
+      let s2StabForce = 0, s2StabOrder = 0, s2StabIdeology = 0, s2StabWelfare = 0;
+      let s2RevForce = 0, s2RevOrder = 0, s2RevIdeology = 0, s2RevWelfare = 0;
       
       if (state.season === 2) {
         state.infrastructures.forEach(infra => {
@@ -619,14 +1153,19 @@
           });
           const mult = infra.faction === 'stability' ? s2StabMult : s2RevMult;
           const effectiveS2 = s2Raw * mult;
-          if (infra.faction === 'stability') s2Stability += effectiveS2;
-          else s2Revolution += effectiveS2;
-
-          // Add to attribute totals
-          if (infra.attribute === 'force') totalForce += effectiveS2;
-          if (infra.attribute === 'order') totalOrder += effectiveS2;
-          if (infra.attribute === 'ideology') totalIdeology += effectiveS2;
-          if (infra.attribute === 'welfare') totalWelfare += effectiveS2;
+          if (infra.faction === 'stability') {
+            s2Stability += effectiveS2;
+            if (infra.attribute === 'force') s2StabForce += effectiveS2;
+            if (infra.attribute === 'order') s2StabOrder += effectiveS2;
+            if (infra.attribute === 'ideology') s2StabIdeology += effectiveS2;
+            if (infra.attribute === 'welfare') s2StabWelfare += effectiveS2;
+          } else {
+            s2Revolution += effectiveS2;
+            if (infra.attribute === 'force') s2RevForce += effectiveS2;
+            if (infra.attribute === 'order') s2RevOrder += effectiveS2;
+            if (infra.attribute === 'ideology') s2RevIdeology += effectiveS2;
+            if (infra.attribute === 'welfare') s2RevWelfare += effectiveS2;
+          }
         });
       }
 
@@ -666,24 +1205,71 @@
       document.getElementById('total-stability-val').innerText = `${Math.round(totalStability)} AP (${totalStabPct.toFixed(1)}%)`;
       document.getElementById('total-revolution-val').innerText = `${Math.round(totalRevolution)} AP (${totalRevPct.toFixed(1)}%)`;
 
+      // Faction-specific attribute totals
+      const stabForce = s1StabForce + s2StabForce;
+      const stabOrder = s1StabOrder + s2StabOrder;
+      const stabIdeology = s1StabIdeology + s2StabIdeology;
+      const stabWelfare = s1StabWelfare + s2StabWelfare;
+
+      const revForce = s1RevForce + s2RevForce;
+      const revOrder = s1RevOrder + s2RevOrder;
+      const revIdeology = s1RevIdeology + s2RevIdeology;
+      const revWelfare = s1RevWelfare + s2RevWelfare;
+
+      // Update text in legend
+      document.getElementById('val-stab-force').innerText = Math.round(stabForce);
+      document.getElementById('val-rev-force').innerText = Math.round(revForce);
+      
+      document.getElementById('val-stab-order').innerText = Math.round(stabOrder);
+      document.getElementById('val-rev-order').innerText = Math.round(revOrder);
+      
+      document.getElementById('val-stab-ideology').innerText = Math.round(stabIdeology);
+      document.getElementById('val-rev-ideology').innerText = Math.round(revIdeology);
+      
+      document.getElementById('val-stab-welfare').innerText = Math.round(stabWelfare);
+      document.getElementById('val-rev-welfare').innerText = Math.round(revWelfare);
+
       // Radar graph math
-      document.getElementById('val-force').innerText = Math.round(totalForce);
-      document.getElementById('val-order').innerText = Math.round(totalOrder);
-      document.getElementById('val-ideology').innerText = Math.round(totalIdeology);
-      document.getElementById('val-welfare').innerText = Math.round(totalWelfare);
+      const maxAttr = Math.max(
+        stabForce, stabOrder, stabIdeology, stabWelfare,
+        revForce, revOrder, revIdeology, revWelfare,
+        50
+      );
 
-      const maxAttr = Math.max(totalForce, totalOrder, totalIdeology, totalWelfare, 50);
-      const forceLen = (totalForce / maxAttr) * 80;
-      const orderLen = (totalOrder / maxAttr) * 80;
-      const welfareLen = (totalWelfare / maxAttr) * 80;
-      const ideologyLen = (totalIdeology / maxAttr) * 80;
+      // Stability lengths
+      const sfLen = (stabForce / maxAttr) * 80;
+      const soLen = (stabOrder / maxAttr) * 80;
+      const swLen = (stabWelfare / maxAttr) * 80;
+      const siLen = (stabIdeology / maxAttr) * 80;
 
-      const pForce = `100,${100 - forceLen}`;
-      const pOrder = `${100 + orderLen},100`;
-      const pWelfare = `100,${100 + welfareLen}`;
-      const pIdeology = `${100 - ideologyLen},100`;
+      const psForce = `100,${100 - sfLen}`;
+      const psOrder = `${100 + soLen},100`;
+      const psWelfare = `100,${100 + swLen}`;
+      const psIdeology = `${100 - siLen},100`;
 
-      document.getElementById('radar-poly').setAttribute('points', `${pForce} ${pOrder} ${pWelfare} ${pIdeology}`);
+      document.getElementById('radar-poly-stab').setAttribute('points', `${psForce} ${psOrder} ${psWelfare} ${psIdeology}`);
+
+      // Revolution lengths
+      const rfLen = (revForce / maxAttr) * 80;
+      const roLen = (revOrder / maxAttr) * 80;
+      const rwLen = (revWelfare / maxAttr) * 80;
+      const riLen = (revIdeology / maxAttr) * 80;
+
+      const prForce = `100,${100 - rfLen}`;
+      const prOrder = `${100 + roLen},100`;
+      const prWelfare = `100,${100 + rwLen}`;
+      const prIdeology = `${100 - riLen},100`;
+
+      document.getElementById('radar-poly-rev').setAttribute('points', `${prForce} ${prOrder} ${prWelfare} ${prIdeology}`);
+
+      // Real-time Ending Projection Update
+      const projection = getEndingProjection();
+      const realtimeTitleEl = document.getElementById('realtime-ending-title');
+      const realtimeDescEl = document.getElementById('realtime-ending-desc');
+      if (realtimeTitleEl && realtimeDescEl) {
+        realtimeTitleEl.innerText = projection.title;
+        realtimeDescEl.innerText = projection.desc;
+      }
 
       // Refresh JSON strings
       document.getElementById('backup-json-textarea').value = JSON.stringify(state, null, 2);
@@ -750,6 +1336,10 @@
         }
         miniTimeline.innerHTML = html;
       }
+
+      renderScriptManager();
+      renderEndingManager();
+      renderEndingGuidebook();
     }
 
     function getKoreanAttribute(attr) {
@@ -767,10 +1357,15 @@
       skybornGrid.innerHTML = '';
       whaleGrid.innerHTML = '';
 
+      // Determine dynamic max threshold for gauge rendering
+      const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
+      const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
+
       state.infrastructures.forEach(infra => {
         const { multiplier, blocked } = getAPModifier(infra.id);
         const currentAP = getDisplayAP(infra.id);
         const effectiveAP = getEffectiveAP(infra.id);
+        const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
         const cardHTML = `
           <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
             <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
@@ -785,10 +1380,10 @@
             <div>
               <div class="infra-progress-container">
                 <div class="infra-progress-bar">
-                  <div class="infra-progress-fill" style="width: ${Math.min((effectiveAP / 100) * 100, 100)}%;"></div>
+                  <div class="infra-progress-fill" style="width: ${fillPercent}%;"></div>
                 </div>
                 <div class="infra-stats-row">
-                  <span>누적 행동력: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''}</span>
+                  <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
                   <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상'}</span>
                 </div>
               </div>
@@ -811,6 +1406,9 @@
       });
     }
 
+
+
+
     function getInfraIcon(id) {
       const icons = {
         nobles: 'fa-solid fa-gavel',
@@ -829,6 +1427,34 @@
       return icons[id] || 'fa-solid fa-house';
     }
 
+    // ============================================================
+    // 캐릭터 일일 행동력(AP) 관리
+    // ============================================================
+    const DAILY_AP_LIMIT = 10; // 캐릭터 1인당 하루 기본 지급 행동력
+
+    // 캐릭터의 '오늘(state.day)' 기준 잔여 행동력을 계산합니다.
+    // 하루가 지나 state.day가 바뀌면 이전 날짜의 로그는 계산에서 제외되므로,
+    // 별도의 데이터 삭제 없이도 항상 해당 일차의 소모량만 반영되어 자동으로 10 AP로 복원됩니다.
+    function getCharacterRemainingAP(charId) {
+      const spentToday = state.logs
+        .filter(l => l.charId === charId && l.season === state.season && l.day === state.day)
+        .reduce((sum, l) => sum + l.baseAP, 0);
+      return Math.max(0, DAILY_AP_LIMIT - spentToday);
+    }
+
+    // 하루 결산(EOD) 또는 강제 날짜 이동으로 state.day가 바뀐 직후 호출되는 함수.
+    // AP 자체는 로그 기반으로 파생 계산되므로 저장된 값을 지울 필요는 없지만,
+    // 날짜 전환 시점에 캐릭터 선택 드롭다운 및 캐릭터 테이블의 AP 표시를
+    // 명시적으로 즉시 새로고침하여 "기존 값(DAILY_AP_LIMIT)으로 초기화"된 화면을 보장합니다.
+    function resetDailyActionPoints() {
+      populateDropdowns();
+      renderCharacterTable();
+    }
+
+
+
+
+
     function populateDropdowns() {
       const charSelect = document.getElementById('log-char-select');
       const infraSelect = document.getElementById('log-infra-select');
@@ -846,10 +1472,7 @@
           else if (char.sec2Faction === 'Nightwalker') activeFaction = '나이트워커';
           else activeFaction = '미지정';
         }
-        const spentBase = state.logs
-          .filter(l => l.charId === char.id && l.season === state.season)
-          .reduce((sum, l) => sum + l.baseAP, 0);
-        const remainingAP = Math.max(0, 10 - spentBase);
+        const remainingAP = getCharacterRemainingAP(char.id);
         const charFname = `${char.name} (${activeFaction}) [잔여: ${remainingAP} AP]`;
         charSelect.innerHTML += `<option value="${char.id}">${charFname}</option>`;
       });
@@ -876,8 +1499,8 @@
         if (log.charId === 'SYSTEM') return 1.5;
         if (log.season === 1) return 1;
         if (log.season === 2) return 2;
-        if (log.id.startsWith('log_s1_')) return 1;
-        if (log.id.startsWith('log_s2_')) return 2;
+        if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s1_')) return 1;
+        if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s2_')) return 2;
         return 1;
       }
 
@@ -906,9 +1529,9 @@
         let seasonLabel = '';
         if (log.season) {
           seasonLabel = `${log.season}기 `;
-        } else if (log.id.startsWith('log_s1_')) {
+        } else if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s1_')) {
           seasonLabel = '1기 ';
-        } else if (log.id.startsWith('log_s2_')) {
+        } else if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s2_')) {
           seasonLabel = '2기 ';
         } else {
           // Fallback check against the sortedLogs array
@@ -921,15 +1544,19 @@
           }
         }
 
+        const critBadgeHTML = log.isCritical ? `<span class="crit-badge" style="background: linear-gradient(135deg, #ff4e50, #f9d423); color: white; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 5px rgba(255,78,80,0.5);"><i class="fa-solid fa-fire"></i> CRITICAL!</span>` : "";
+
         logsList.innerHTML += `
           <div class="log-entry">
             <span>[${seasonLabel}Day ${log.day}] <strong>${log.charName}</strong>: ${log.infraName} 에 ${log.ap} AP 투자 
-            <span style="color: var(--text-muted); font-size: 0.75rem;">(보정 전: ${log.baseAP} AP, 적용 배율: x${log.multiplier})</span></span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">(보정 전: ${log.baseAP} AP, 적용 배율: x${log.multiplier})</span>${critBadgeHTML}</span>
             <button class="btn" style="padding: 0 4px; font-size: 0.7rem; border-color: var(--danger-color); color: var(--danger-color); flex-shrink: 0;" onclick="deleteLog('${log.id}')"><i class="fa-solid fa-trash"></i> 삭제</button>
           </div>
         `;
       });
     }
+
+
 
     function renderCharacterTable() {
       const tbody = document.getElementById('character-table-body');
@@ -960,10 +1587,7 @@
         const s1BadgeText = char.startClass === 'Skyborn' ? '스카이본' : (char.startClass === 'Whale' ? '스카이웨일' : '없음');
         const s1BadgeClass = char.startClass === 'Skyborn' ? 'skyborn' : (char.startClass === 'Whale' ? 'whale' : 'unassigned');
 
-        const spentBase = state.logs
-          .filter(l => l.charId === char.id && l.season === state.season)
-          .reduce((sum, l) => sum + l.baseAP, 0);
-        const remainingAP = Math.max(0, 10 - spentBase);
+        const remainingAP = getCharacterRemainingAP(char.id);
 
         tbody.innerHTML += `
           <tr>
@@ -1066,6 +1690,12 @@
 
       if (!char || !infra) return;
 
+      const remainingAP = getCharacterRemainingAP(charId);
+      if (baseAP > remainingAP) {
+        alert(`해당 캐릭터의 잔여 AP가 부족합니다. (현재 잔여: ${remainingAP} AP, 입력: ${baseAP} AP)`);
+        return;
+      }
+
       const { multiplier, blocked } = getAPModifier(infraId);
       
       if (blocked) {
@@ -1073,7 +1703,36 @@
         return;
       }
 
-      const finalAP = Math.round(baseAP * multiplier);
+      // Determine active faction for critical probability
+      let charFaction = '';
+      if (state.season === 1) {
+        charFaction = char.startClass === 'Skyborn' ? 'stability' : (char.startClass === 'Whale' ? 'revolution' : '');
+      } else {
+        charFaction = char.sec2Faction === 'Skyguard' ? 'stability' : (char.sec2Faction === 'Nightwalker' ? 'revolution' : '');
+      }
+
+      // Calculate critical rate (base 5% + bonus up to 25% based on Academy/School AP)
+      const baseCritRate = 0.05;
+      let bonusCritRate = 0.0;
+
+      if (charFaction === 'stability') {
+        const academyAP = getDisplayAP('academy');
+        // +1% critical chance per 10 AP in Academy, max +25%
+        bonusCritRate = Math.min(0.25, academyAP * 0.001);
+      } else if (charFaction === 'revolution') {
+        const schoolAP = getDisplayAP('school');
+        // +1% critical chance per 10 AP in School, max +25%
+        bonusCritRate = Math.min(0.25, schoolAP * 0.001);
+      }
+
+      const finalCritRate = baseCritRate + bonusCritRate;
+      const isCritical = Math.random() < finalCritRate;
+
+      let finalAP = Math.round(baseAP * multiplier);
+      if (isCritical) {
+        // Critical Success: 1.5x final AP, rounded to integer
+        finalAP = Math.round(finalAP * 1.5);
+      }
 
       const logEntry = {
         id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
@@ -1085,7 +1744,8 @@
         infraName: infra.name,
         baseAP,
         multiplier,
-        ap: finalAP
+        ap: finalAP,
+        isCritical: isCritical
       };
 
       infra.ap += finalAP;
@@ -1096,8 +1756,9 @@
       document.getElementById('log-infra-select').value = '';
       saveToLocalStorage();
       updateUI();
-      showRandomScriptPopup(infraId, char.name, baseAP, finalAP);
+      showRandomScriptPopup(infraId, char.name, baseAP, finalAP, isCritical);
     }
+
 
     function deleteLog(logId) {
       const logIdx = state.logs.findIndex(l => l.id === logId);
@@ -1214,6 +1875,7 @@
 
       saveToLocalStorage();
       updateUI();
+      resetDailyActionPoints();
     }
 
     function resetWholeSystem() {
@@ -1225,7 +1887,12 @@
           characters: [],
           activeEvents: [],
           customEvents: [],
-          logs: []
+          logs: [],
+          scripts: JSON.parse(JSON.stringify(RANDOM_SCRIPTS)),
+          endingConfig: {
+            thresholds: JSON.parse(JSON.stringify(DEFAULT_ENDING_THRESHOLDS)),
+            scripts: JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS))
+          }
         };
         isEditMode = false;
         saveToLocalStorage();
@@ -1248,22 +1915,27 @@
           season: 1,
           day: 4,
           infrastructures: [
-            { id: "nobles", name: "귀족원 (House of Nobles)", faction: "stability", attribute: "order", ap: 140, desc: "스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다." },
-            { id: "memorial", name: "창립자 기념관 (Founders Memorial)", faction: "stability", attribute: "ideology", ap: 130, desc: "건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다." },
-            { id: "academy", name: "귀족 아카데미 (Noble Academy)", faction: "stability", attribute: "order", ap: 120, desc: "스카이본 자제들의 정규 엘리트 아카데미. 문화와 관습을 교육합니다." },
-            { id: "admin", name: "행정청 (Administration)", faction: "stability", attribute: "welfare", ap: 160, desc: "기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다." },
-            { id: "guard", name: "근위사령부 (Guard Command)", faction: "stability", attribute: "force", ap: 130, desc: "티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징." },
-            { id: "society", name: "왕립학회 (Royal Society)", faction: "stability", attribute: "ideology", ap: 120, desc: "기술 절제주의 이념과 공식 지적 유산을 연구하고 검열하는 학술 기구." },
-            { id: "school", name: "웨일 학교 (Whale School)", faction: "revolution", attribute: "ideology", ap: 80, desc: "솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다." },
-            { id: "union", name: "노동조합 (Labor Union)", faction: "revolution", attribute: "order", ap: 80, desc: "스카이웨일 노동자들의 권익과 자치 단결력을 대변하는 노동 핵심 공동체." },
-            { id: "community", name: "주민회관 (Community Center)", faction: "revolution", attribute: "welfare", ap: 80, desc: "웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관." },
-            { id: "workshop", name: "공방 (Workshop)", faction: "revolution", attribute: "welfare", ap: 70, desc: "웨일 기술자들이 아날로그 수공예 및 최신 효율 장비를 유지 관리하는 자립 경제 거점." },
-            { id: "port", name: "항만노조 (Port Union)", faction: "revolution", attribute: "force", ap: 70, desc: "스카이웨일 작업선 선원들이 소속된 최대 운송 노조. 해양 및 공중 물류 무력을 장악." },
-            { id: "crews", name: "작업반 (Work Crews)", faction: "revolution", attribute: "force", ap: 70, desc: "가장 험난한 지상 환경 자원 채굴을 수행하는 거친 현장 인력들의 실질적 물리 투쟁력." }
+            { id: "nobles", name: "귀족원 (House of Nobles)", faction: "stability", attribute: "order", ap: 0, desc: "스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력 and 지배 규율을 의미합니다." },
+            { id: "memorial", name: "창립자 기념관 (Founders Memorial)", faction: "stability", attribute: "ideology", ap: 0, desc: "건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다." },
+            { id: "academy", name: "귀족 아카데미 (Noble Academy)", faction: "stability", attribute: "order", ap: 0, desc: "스카이본 자제들의 정규 엘리트 아카데미. 문화와 관습을 교육합니다." },
+            { id: "admin", name: "행정청 (Administration)", faction: "stability", attribute: "welfare", ap: 0, desc: "기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다." },
+            { id: "guard", name: "근위사령부 (Guard Command)", faction: "stability", attribute: "force", ap: 0, desc: "티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징." },
+            { id: "society", name: "왕립학회 (Royal Society)", faction: "stability", attribute: "ideology", ap: 0, desc: "기술 절제주의 이념과 공식 지적 유산을 연구하고 검열하는 학술 기구." },
+            { id: "school", name: "웨일 학교 (Whale School)", faction: "revolution", attribute: "ideology", ap: 0, desc: "솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다." },
+            { id: "union", name: "노동조합 (Labor Union)", faction: "revolution", attribute: "order", ap: 0, desc: "스카이웨일 노동자들의 권익과 자치 단결력을 대변하는 노동 핵심 공동체." },
+            { id: "community", name: "주민회관 (Community Center)", faction: "revolution", attribute: "welfare", ap: 0, desc: "웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관." },
+            { id: "workshop", name: "공방 (Workshop)", faction: "revolution", attribute: "welfare", ap: 0, desc: "웨일 기술자들이 아날로그 수공예 및 최신 효율 장비를 유지 관리하는 자립 경제 거점." },
+            { id: "port", name: "항만노조 (Port Union)", faction: "revolution", attribute: "force", ap: 0, desc: "스카이웨일 작업선 선원들이 소속된 최대 운송 노조. 해양 및 공중 물류 무력을 장악." },
+            { id: "crews", name: "작업반 (Work Crews)", faction: "revolution", attribute: "force", ap: 0, desc: "가장 험난한 지상 환경 자원 채굴을 수행하는 거친 현장 인력들의 실질적 물리 투쟁력." }
           ],
           characters: [],
           activeEvents: [],
-          logs: []
+          logs: [],
+          scripts: JSON.parse(JSON.stringify(RANDOM_SCRIPTS)),
+          endingConfig: {
+            thresholds: JSON.parse(JSON.stringify(DEFAULT_ENDING_THRESHOLDS)),
+            scripts: JSON.parse(JSON.stringify(DEFAULT_ENDING_SCRIPTS))
+          }
         };
 
         const mockNames = [
@@ -1316,18 +1988,45 @@
             const logInfo = logPool.pop();
             if (!logInfo) break;
             const charIdx = (logIdCounter - 1) % 40;
+            const char = state.characters[charIdx];
+            const infra = state.infrastructures.find(inf => inf.id === logInfo.infraId);
+
+            // Determine S1 faction for critical probability
+            const charFaction = char.startClass === 'Skyborn' ? 'stability' : (char.startClass === 'Whale' ? 'revolution' : '');
+            
+            // Calculate critical rate (using current AP in loop)
+            const baseCritRate = 0.05;
+            let bonusCritRate = 0.0;
+
+            if (charFaction === 'stability') {
+              const academyAP = state.infrastructures.find(inf => inf.id === 'academy').ap;
+              bonusCritRate = Math.min(0.25, academyAP * 0.001);
+            } else if (charFaction === 'revolution') {
+              const schoolAP = state.infrastructures.find(inf => inf.id === 'school').ap;
+              bonusCritRate = Math.min(0.25, schoolAP * 0.001);
+            }
+
+            const finalCritRate = baseCritRate + bonusCritRate;
+            const isCritical = Math.random() < finalCritRate;
+            const apAmount = isCritical ? 15 : 10;
+
             state.logs.push({
               id: `log_s1_d${day}_` + logIdCounter.toString().padStart(3, '0'),
               season: 1,
               day: day,
-              charId: state.characters[charIdx].id,
-              charName: state.characters[charIdx].name,
+              charId: char.id,
+              charName: char.name,
               infraId: logInfo.infraId,
               infraName: logInfo.infraName,
               baseAP: 10,
               multiplier: 1.0,
-              ap: 10
+              ap: apAmount,
+              isCritical: isCritical
             });
+
+            if (infra) {
+              infra.ap += apAmount;
+            }
             logIdCounter++;
           }
         }
@@ -1346,7 +2045,9 @@
         if (countSkyborn > 0 && countWhale > 0) {
           ratio = countSkyborn < countWhale ? (countWhale / countSkyborn) : (countSkyborn / countWhale);
         }
-        alert(`1기 에버라이트 모의 시뮬레이션 데이터가 정상적으로 생성되었습니다!\n\n- 현재 상태: 1기 DAY 4\n- Roster: 스카이본 ${countSkyborn}명 vs 스카이웨일 ${countWhale}명 (인원 편중 배율: x${ratio.toFixed(2)})\n- 누적 AP: 1,250 AP`);
+
+        let totalAPSum = state.infrastructures.reduce((sum, inf) => sum + inf.ap, 0);
+        alert(`1기 에버라이트 모의 시뮬레이션 데이터가 정상적으로 생성되었습니다!\n\n- 현재 상태: 1기 DAY 4\n- Roster: 스카이본 ${countSkyborn}명 vs 스카이웨일 ${countWhale}명 (인원 편중 배율: x${ratio.toFixed(2)})\n- 누적 AP: ${totalAPSum} AP (크리티컬 보너스 반영 완료)`);
       } 
       else {
         // Season 2 Simulation
@@ -1426,6 +2127,25 @@
           const infra = state.infrastructures[Math.floor(Math.random() * state.infrastructures.length)];
           const baseAP = 5 + Math.floor(Math.random() * 3) * 5; // 5, 10, or 15 AP
           
+          // Determine S2 faction for critical probability
+          const charFaction = char.sec2Faction === 'Skyguard' ? 'stability' : (char.sec2Faction === 'Nightwalker' ? 'revolution' : '');
+          
+          // Calculate critical rate (using current AP in loop)
+          const baseCritRate = 0.05;
+          let bonusCritRate = 0.0;
+
+          if (charFaction === 'stability') {
+            const academyAP = state.infrastructures.find(inf => inf.id === 'academy').ap;
+            bonusCritRate = Math.min(0.25, academyAP * 0.001);
+          } else if (charFaction === 'revolution') {
+            const schoolAP = state.infrastructures.find(inf => inf.id === 'school').ap;
+            bonusCritRate = Math.min(0.25, schoolAP * 0.001);
+          }
+
+          const finalCritRate = baseCritRate + bonusCritRate;
+          const isCritical = Math.random() < finalCritRate;
+          const finalAP = isCritical ? Math.round(baseAP * 1.5) : baseAP;
+
           state.logs.push({
             id: `log_s2_sim_` + Date.now() + `_` + s2LogCounter,
             season: 2,
@@ -1436,21 +2156,21 @@
             infraName: infra.name,
             baseAP: baseAP,
             multiplier: 1.0,
-            ap: baseAP
+            ap: finalAP,
+            isCritical: isCritical
           });
 
-          infra.ap += baseAP;
+          infra.ap += finalAP;
           s2LogCounter++;
         }
 
         saveToLocalStorage();
         switchTab('tab-dashboard');
-        alert(`2기 에버나이트 4일차 시뮬레이션 데이터가 추가로 주입되었습니다!\n\n- 현재 상태: 2기 DAY 4\n- Roster: 보수 ${countSkyguard}명 vs 혁명 ${countNightwalker}명\n- 2기 투자처 및 AP 기입량 완전 무작위 셔플 가동 완료!`);
+        alert(`2기 에버나이트 4일차 시뮬레이션 데이터가 추가로 주입되었습니다!\n\n- 현재 상태: 2기 DAY 4\n- Roster: 보수 ${countSkyguard}명 vs 혁명 ${countNightwalker}명\n- 2기 투자처 및 AP 기입량 완전 무작위 셔플 가동 완료! (크리티컬 보너스 반영 완료)`);
       }
     }
 
-    // Transition
-    // Transition
+
     function triggerSeasonTransition() {
       if (state.season === 2) return;
 
@@ -1478,116 +2198,7 @@
     }
 
     function getEndingProjection() {
-      let totalStability = 0;
-      let totalRevolution = 0;
-      let totalForce = 0;
-      let totalOrder = 0;
-      let totalIdeology = 0;
-      let totalWelfare = 0;
-
-      state.infrastructures.forEach(infra => {
-        let effectiveAP = getEffectiveAP(infra.id);
-
-        if (infra.faction === 'stability') totalStability += effectiveAP;
-        if (infra.faction === 'revolution') totalRevolution += effectiveAP;
-
-        if (infra.attribute === 'force') totalForce += effectiveAP;
-        if (infra.attribute === 'order') totalOrder += effectiveAP;
-        if (infra.attribute === 'ideology') totalIdeology += effectiveAP;
-        if (infra.attribute === 'welfare') totalWelfare += effectiveAP;
-      });
-
-      const totalAP = totalStability + totalRevolution;
-      
-      if (totalAP === 0) {
-        return {
-          title: '판도 분석 불가능',
-          desc: '누적 데이터가 없어 결산할 수 없습니다.',
-          totalStability: 0,
-          totalRevolution: 0,
-          totalForce: 0,
-          totalOrder: 0,
-          totalIdeology: 0,
-          totalWelfare: 0,
-          totalAP: 0,
-          marginPercent: 0
-        };
-      }
-
-      let endingTitle = '';
-      let endingDesc = '';
-
-      const diff = Math.abs(totalStability - totalRevolution);
-      const marginPercent = (diff / totalAP) * 100;
-
-      const stabPercent = (totalStability / totalAP) * 100;
-      const revPercent = (totalRevolution / totalAP) * 100;
-
-      if (marginPercent < 5) {
-        endingTitle = '⚠️ [파국] 영원한 긴 밤의 고착화 (Anarchy & Long Night)';
-        endingDesc = '1기 동안 축적된 해묵은 갈등과 2기의 유혈 투쟁이 완전히 호각을 이루었습니다. 나이트워커는 하늘섬의 국가망을 전복할 수준의 강력한 화력을 갖췄으나, 스카이가드 역시 완고하게 철권 감시망을 풀지 않았습니다. 티르 나 노이는 양대 세력 간의 끝없는 도심 소모전으로 번져 기어코 인공 부유도 군도 전체가 서서히 가라앉는 아비규환의 아포칼립스로 직행합니다.';
-      } 
-      else if (totalStability > totalRevolution) {
-        const sForce = getEffectiveAP('guard');
-        const sOrder = getEffectiveAP('nobles') + getEffectiveAP('academy');
-        const sIdeology = getEffectiveAP('memorial') + getEffectiveAP('society');
-        const sWelfare = getEffectiveAP('admin');
-        const sTotal = sForce + sOrder + sIdeology + sWelfare;
-
-        if (sTotal < 150) {
-          endingTitle = '⌛ [보수] 정체와 서서히 추락하는 하늘섬 (Stagnation & Decay)';
-          endingDesc = '체제 수호 진영이 승리하였으나 그를 지탱할 의지나 인프라가 극히 저조했습니다. 개혁도 완전한 진압도 없이 고위 관료들과 귀족들의 사리사욕만 가득 찼으며, 공동체의 정통성은 바닥을 칩니다. 공중도시는 엔진 노후와 갈등 고착화로 인해 세대를 거치며 동력을 잃고 지상을 향해 침묵 속에 추락해 갑니다.';
-        } else if (sForce > sTotal * 0.45) {
-          endingTitle = '🚨 [보수] 군사 계엄 및 철권 특별재판부 (Iron-fisted Dictatorship)';
-          endingDesc = '체제를 지키기 위해 무력(근위사령부)에 압도적인 행동력이 실렸습니다. 혁명군 혐의자는 즉각 교수형에 처해지고 군정이 선포되어 거리는 삼엄한 스카이가드의 순찰선과 감시 카메라로 도배됩니다. 의회는 사실상 기능을 상실하였으며, 하늘섬은 아름다운 아날로그 가치를 상실한 냉혹한 수용소형 군사 감시국가로 퇴색합니다.';
-        } else if (sOrder > sTotal * 0.45) {
-          endingTitle = '🚨 [보수/규율] 관료제적 기계 통제국가 (Surveillance Technocracy)';
-          endingDesc = '보수 진영이 의회와 사관학교를 중심으로 강력한 규율 체제를 확보했습니다. 모든 시민의 일거수일투족이 엄격한 행정 전산과 기계적 감시 통제망 아래 놓이게 되며, 개인의 자유는 철저히 말살된 차갑고 효율적인 관료제 감시 국가가 도래합니다.';
-        } else if (sWelfare + sIdeology > sTotal * 0.50) {
-          endingTitle = '🏆 [보수/명예] 질서와 평화의 낙원 (Harmony & Clean Order)';
-          endingDesc = '안정적이고 교양 있는 체제 수호의 이상향입니다. 비록 질서는 유지되지만 복지(행정청)와 건국의 명분(기념관)에 투자된 압도적인 힘으로, 정부는 웨일 계층의 불만을 흡수하는 대대적인 참정권 개혁과 민생 복지를 단행했습니다. 유혈 학살 없이 스카이본과 웨일이 서로 질서 속에 공존하며 다시 낙원의 빛을 회복합니다.';
-        } else {
-          endingTitle = '⚖️ [보수] 규율과 안정의 지속 (Traditional Status Quo)';
-          endingDesc = '전형적인 티르 나 노이의 체제 존속입니다. 혁명 조직 나이트워커는 진압되었고 의회와 상원은 건재하지만, 1기와 마찬가지로 신분 간의 암묵적인 편견과 차별은 해결되지 않은 채, 200년 동안 지속해 온 모순을 안고 아슬아슬한 평화를 지켜 나갑니다.';
-        }
-      } 
-      else {
-        const rForce = getEffectiveAP('port') + getEffectiveAP('crews');
-        const rOrder = getEffectiveAP('union');
-        const rIdeology = getEffectiveAP('school');
-        const rWelfare = getEffectiveAP('community') + getEffectiveAP('workshop');
-        const rTotal = rForce + rOrder + rIdeology + rWelfare;
-
-        if (rTotal < 150) {
-          endingTitle = '⌛ [혁명] 미완의 혁명과 군벌의 난립 (Anarchy & Mob Rule)';
-          endingDesc = '혁명에 극적으로 성공해 귀족원을 전복했으나 이를 통치하고 안정시킬 만한 규율이나 기반이 심각하게 모자랐습니다. 중심을 잃은 아발론은 무법지대로 전락했고, 군부 일부와 거친 광산 작업반, 생존자들이 무장을 갖추고 패권 다툼을 벌이며 지상 세계와 같은 아수라장의 지배권 분쟁에 돌입합니다.';
-        } else if (rForce > rTotal * 0.45) {
-          endingTitle = '🚨 [혁명] 단두대와 보복의 붉은 광장 (Reign of Terror)';
-          endingDesc = '오직 물리적 투쟁/파괴(항만/작업반)를 동반한 유혈 혁명의 결과입니다. 권력을 잡은 급진파 나이트워커는 스카이본 가문 전체를 반역자로 선포해 대대적인 숙청과 숙청을 단행했습니다. 보족의 악순환이 꼬리를 물며 지식인들도 불순분자로 수감되는 공포 정치가 도래합니다.';
-        } else if (rOrder > rTotal * 0.45) {
-          endingTitle = '🚨 [혁명/규율] 통제된 조합주의 배급체제 (Controlled Command)';
-          endingDesc = '혁명 세력이 승리한 후 광산 노조를 위시로 한 극단적인 감시 및 통제 규율을 선포했습니다. 모든 산업 시설과 배급 체계가 조합 위원회에 의해 통제되며, 혁명의 대의에 어긋나는 일탈은 묵과되지 않는 경직된 조합주의적 통제 배급 체제가 성립됩니다.';
-        } else if (rWelfare + rIdeology > rTotal * 0.50) {
-          endingTitle = '🏆 [혁명/명예] 자유와 평등의 공화정 (Idealistic New Era)';
-          endingDesc = '교육(웨일학교)과 민생(주민회관/공방)의 성장이 빚어낸 아름다운 새 시대입니다. 나이트워커의 승리 이후 보복적인 유혈 진압 대신 온건파가 득세하여 귀족 계급을 폐지하고, 전 국민(스카이본과 웨일 전원)에게 참정권을 전면 보장하는 진정한 민주 공화정을 수립하는 역사적 성과를 이룩합니다.';
-        } else {
-          endingTitle = '⚖️ [혁명] 새로운 지배 구도의 수립 (New Regime Status Quo)';
-          endingDesc = '혁명군 나이트워커가 정권을 장악하여 새로운 정부를 수립했습니다. 스카이본 귀족원은 전복되고 노동자 중심의 체제로 재편되었으나, 행정 능력의 부재 및 사후 처리 과정에서 새로운 기득권층이 된 혁명 수뇌부가 또 다른 권위주의적인 지배 계층을 형성하게 됩니다.';
-        }
-      }
-
-      return {
-        title: endingTitle,
-        desc: endingDesc,
-        totalStability: totalStability,
-        totalRevolution: totalRevolution,
-        totalForce: totalForce,
-        totalOrder: totalOrder,
-        totalIdeology: totalIdeology,
-        totalWelfare: totalWelfare,
-        totalAP: totalAP,
-        marginPercent: marginPercent
-      };
+      return computeEndingResult();
     }
 
     // Ending calculation
@@ -1613,7 +2224,7 @@
             * 총 투입 행동력: ${Math.round(projection.totalAP)} AP<br>
             * [보수 세력 (스카이본[1기] / 스카이가드[2기])] 수치: ${Math.round(projection.totalStability)} AP (${stabPercent.toFixed(1)}%)<br>
             * [혁명 세력 (스카이웨일[1기] / 나이트워커[2기])] 수치: ${Math.round(projection.totalRevolution)} AP (${revPercent.toFixed(1)}%)<br>
-            * 격차 배분도: ${projection.marginPercent.toFixed(1)}% (교착 기준: 5% 미만)<br>
+            * 격차 배분도: ${projection.marginPercent.toFixed(1)}% (교착 기준: ${state.endingConfig.thresholds.deadlockMarginPercent}% 미만)<br>
             ------------------------------------<br>
             [속성 균형 분석]<br>
             - 무력(Force) 지수: ${Math.round(projection.totalForce)} AP<br>
@@ -1710,6 +2321,7 @@ ${desc}
 
         if (confirm("정말로 전달받은 백업 데이터로 덮어쓰시겠습니까?")) {
           state = parsed;
+          ensureConfigState();
           saveToLocalStorage();
           document.getElementById('import-json-textarea').value = '';
           alert("동기화 완료!");
@@ -1824,6 +2436,7 @@ ${desc}
         if (payload.updatedBy === getClientId()) return; // 내가 방금 쓴 값은 무시 (루프 방지)
         suppressNextPush = true;
         state = payload.data;
+        ensureConfigState();
         localStorage.setItem('tirnanog_state', JSON.stringify(state));
         updateUI();
         updateSyncStatus('received');
@@ -1914,6 +2527,7 @@ ${desc}
             if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
               suppressNextPush = true;
               state = payload.data;
+              ensureConfigState();
               saveToLocalStorage();
               if (!roomRef || roomRef.key !== roomKey) connectToRoom(roomKey, { silent: true });
               alert("동기화 성공! 클라우드의 최신 판도로 대시보드가 성공적으로 동기화되었습니다.");

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -23,7 +22,7 @@
       <div>
         <span class="logo-text">Ever after</span>
         <!-- VERSION PILL (NEW) -->
-        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-left: 6px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">v1.3.1 (최종 업데이트: 2026-07-18 19:44:20)</span>
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-left: 6px; background: rgba(0,0,0,0.06); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">v1.3.2 (최종 업데이트: 2026-07-24 08:24:14)</span>
         <span class="season-badge" id="season-badge-text">1기 에버라이트</span>
       </div>
     </div>
@@ -121,7 +120,7 @@
       <!-- Attributes Distribution (Radar SVG) -->
       <div class="panel">
         <div class="panel-title">
-          <span>사회 성향 분포 (4대 속성)</span>
+          <span>사회 성향 분포</span>
           <i class="fa-solid fa-chart-pie"></i>
         </div>
         <div class="spider-chart-container">
@@ -134,28 +133,68 @@
             <text x="185" y="103" text-anchor="start" font-size="9" fill="var(--text-main)" font-weight="700">규율</text>
             <text x="100" y="196" text-anchor="middle" font-size="9" fill="var(--text-main)" font-weight="700">상생</text>
             <text x="15" y="103" text-anchor="end" font-size="9" fill="var(--text-main)" font-weight="700">이념</text>
-            <polygon id="radar-poly" points="100,100 100,100 100,100 100,100" fill="rgba(212, 175, 55, 0.4)" stroke="var(--primary-color)" stroke-width="1.5"/>
+            
+            <!-- Stability Polygon (Blueish) -->
+            <polygon id="radar-poly-stab" points="100,100 100,100 100,100 100,100" fill="rgba(51, 102, 204, 0.25)" stroke="#3366cc" stroke-width="1.5"/>
+            <!-- Revolution Polygon (Reddish) -->
+            <polygon id="radar-poly-rev" points="100,100 100,100 100,100 100,100" fill="rgba(220, 53, 69, 0.25)" stroke="#dc3545" stroke-width="1.5"/>
           </svg>
         </div>
-        <div class="attr-legend">
-          <div class="attr-legend-item">
-            <span class="attr-dot dot-force"></span>
-            <span>무력 (Force): <strong id="val-force">0</strong></span>
+        <div class="attr-legend" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 15px;">
+          <div class="attr-legend-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="attr-dot dot-force"></span>
+              <span style="font-weight: 700;">무력 (Force)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-left: 14px;">
+              보수: <strong id="val-stab-force" style="color: #3366cc;">0</strong> / 혁명: <strong id="val-rev-force" style="color: #dc3545;">0</strong>
+            </div>
           </div>
-          <div class="attr-legend-item">
-            <span class="attr-dot dot-order"></span>
-            <span>규율 (Order): <strong id="val-order">0</strong></span>
+          <div class="attr-legend-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="attr-dot dot-order"></span>
+              <span style="font-weight: 700;">규율 (Order)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-left: 14px;">
+              보수: <strong id="val-stab-order" style="color: #3366cc;">0</strong> / 혁명: <strong id="val-rev-order" style="color: #dc3545;">0</strong>
+            </div>
           </div>
-          <div class="attr-legend-item">
-            <span class="attr-dot dot-ideology"></span>
-            <span>이념 (Ideology): <strong id="val-ideology">0</strong></span>
+          <div class="attr-legend-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="attr-dot dot-ideology"></span>
+              <span style="font-weight: 700;">이념 (Ideology)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-left: 14px;">
+              보수: <strong id="val-stab-ideology" style="color: #3366cc;">0</strong> / 혁명: <strong id="val-rev-ideology" style="color: #dc3545;">0</strong>
+            </div>
           </div>
-          <div class="attr-legend-item">
-            <span class="attr-dot dot-welfare"></span>
-            <span>상생 (Welfare): <strong id="val-welfare">0</strong></span>
+          <div class="attr-legend-item" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="attr-dot dot-welfare"></span>
+              <span style="font-weight: 700;">상생 (Welfare)</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-left: 14px;">
+              보수: <strong id="val-stab-welfare" style="color: #3366cc;">0</strong> / 혁명: <strong id="val-rev-welfare" style="color: #dc3545;">0</strong>
+            </div>
           </div>
         </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; font-size: 0.72rem; border-top: 1px dashed rgba(125,114,96,0.15); padding-top: 8px;">
+          <span style="color: var(--text-muted);">범례:</span>
+          <span style="color: #3366cc; font-weight: 700;"><i class="fa-solid fa-square" style="color: rgba(51, 102, 204, 0.4);"></i> 보수 세력</span>
+          <span style="color: #dc3545; font-weight: 700;"><i class="fa-solid fa-square" style="color: rgba(220, 53, 69, 0.4);"></i> 혁명 세력</span>
+        </div>
+        
+        <!-- Real-time Projected Ending (NEW) -->
+        <div id="realtime-ending-container" style="margin-top: 12px; border-top: 1px dashed rgba(125,114,96,0.15); padding-top: 10px;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary-color);"></i>
+            <span>실시간 예측 엔딩</span>
+          </div>
+          <div id="realtime-ending-title" style="font-size: 0.8rem; font-weight: 800; color: var(--primary-color);">분석 중...</div>
+          <div id="realtime-ending-desc" style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; margin-top: 2px;">데이터가 기입되는 즉시 자동으로 엔딩을 예측합니다.</div>
+        </div>
       </div>
+
 
       <!-- Action buttons -->
       <div class="panel" style="gap: 8px;">
@@ -194,6 +233,8 @@
         <button class="tab-btn" onclick="switchTab('tab-dashboard')"><i class="fa-solid fa-city"></i> 기반시설 현황</button>
         <button class="tab-btn" onclick="switchTab('tab-logger')"><i class="fa-solid fa-pen-to-square"></i> 행동력(AP) 기입기</button>
         <button class="tab-btn" onclick="switchTab('tab-characters')"><i class="fa-solid fa-users"></i> 캐릭터 관리</button>
+        <button class="tab-btn" onclick="switchTab('tab-scripts')"><i class="fa-solid fa-scroll"></i> 몰입 스크립트 관리</button>
+        <button class="tab-btn" onclick="switchTab('tab-endings')"><i class="fa-solid fa-flag-checkered"></i> 엔딩 관리</button>
         <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gears"></i> 설정</button>
       </div>
 
@@ -209,8 +250,27 @@
           </p>
           <div style="font-size: 0.85rem; line-height: 1.6; display: flex; flex-direction: column; gap: 15px;">
             <div>
-              <strong style="color: var(--primary-color); font-size: 0.95rem;">v1.3.1 (최종 업데이트: 2026-07-18 19:44:20)</strong>
+              <strong style="color: var(--primary-color); font-size: 0.95rem;">v1.3.2 (최종 업데이트: 2026-07-24 08:24:14)</strong>
               <ul style="margin-left: 20px; list-style-type: disc; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; color: var(--text-main); margin-bottom: 12px;">
+                <li><strong>[시스템] 몰입 스크립트 관리 전용 탭 신설 (기반시설 12종 × 1기/2기별 랜덤 몰입 대화 스크립트를 UI에서 직접 추가·수정·삭제하고 기반시설별 기본값 복원 지원)</strong></li>
+                <li><strong>[시스템] 엔딩 관리 전용 탭 신설 (교착 마진/최소 기반시설 총합/편중 비율/상생+이념 비율 등 엔딩 분기점 임계값 4종 및 11종 엔딩의 제목·결산 스크립트 직접 수정 지원)</strong></li>
+                <li><strong>[시스템] 시나리오 엔딩 도감(가이드북) 실시간 동기화 전환: 고정 문서 방식을 폐지하고, 엔딩 관리 탭에서 수정한 분기점 수치와 엔딩 제목/설명이 도감 팝업에 즉시 반영되는 동적 렌더링 탑재</strong></li>
+                <li><strong>[시스템] 2기 전환 후 사이드바 '1기 에버라이트 확인하기' 조회 콘솔 신설: 1기 최종 세력 판도/4대 속성 지수/기반시설별 누적 AP(보정 반영)를 읽기 전용 팝업으로 열람 (기존 미정의 함수 호출로 버튼이 무반응이던 결함 동시 수정)</strong></li>
+              </ul>
+            </div>
+
+            <div style="border-top: 1px dashed rgba(125,114,96,0.15); padding-top: 8px;">
+              <strong style="color: var(--primary-color); font-size: 0.9rem;">v1.3.1 (최종 업데이트: 2026-07-19 22:08:15)</strong>
+              <ul style="margin-left: 20px; list-style-type: disc; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; color: var(--text-main); margin-bottom: 12px;">
+                <li><strong>[시스템] 행동력 투자 시 크리티컬 대성공 및 보너스 AP 획득 (사관학교/웨일 학교 투자 연동 보너스 최대 30% 확률)</strong></li>
+                <li><strong>[시스템] 1기/2기 세력 판정 독립 격리 (시즌 2에서 1기 신분 영향 차단)</strong></li>
+                <li><strong>[시스템] 기반시설 누적 AP 진척도 게이지 동적 가변 최대치(Dynamic Max, 50 AP 단위 상향) 보정 수식 탑재</strong></li>
+                <li><strong>[시스템] 퀵 모의 시뮬레이션(40인) 구동 시 크리티컬 확률 공식 연동 및 기록 피드 불꽃 배지 표출화</strong></li>
+                <li><strong>[시스템] 사회 성향 분포(레이더 차트) 보수/혁명 세력별 분할 중첩 다각형 렌더러 및 이원화 수치 실시간 대조 범례 탑재</strong></li>
+                <li><strong>[시스템] 캐릭터 일일 잔여 행동력(AP) 초과 입력 차단 및 실시간 한도 경고 연동</strong></li>
+                <li><strong>[시스템] 신분 (1기 기준) 캐릭터 등록 드롭다운 레이블 '스카이본/스카이웨일' 표기 통일</strong></li>
+                <li><strong>[시스템] 크리티컬 전용 팝업 배너, 클립보드 공유 태그 및 기입 피드 🔥 CRITICAL! 불꽃 뱃지 장착</strong></li>
+                <li><strong>[시스템] Firebase Realtime Sync 대소문자 별칭 가교 코드 삽입 및 탭 먹통 결함 완벽 복구</strong></li>
                 <li><strong>[시스템] 시나리오 엔딩 도감 및 조건표 팝업 콘솔 탑재 (설정 탭에서 가이드북 상시 열람 가능)</strong></li>
                 <li><strong>[시스템] 날짜 수동 이동(Day Stepper) 시 안전 경고 알럿 연동 및 이전 날짜로 백업 복구 이동 시 미래 기입 데이터 일괄 자동 파괴 리셋 연동</strong></li>
                 <li><strong>[밸런스] [파국] 영원한 긴 밤의 고착화 (교착) 엔딩 도출 격차 기준 조정 (10% 미만 ➔ 5% 미만)</strong></li>
@@ -449,10 +509,10 @@
             </div>
             
             <div class="form-group" style="margin:0;">
-              <label for="char-class">신분/진영 (1기 기준)</label>
+              <label for="char-class">신분 (1기 기준)</label>
               <select class="form-control" id="char-class" required>
-                <option value="Skyborn">스카이본/스카이가드</option>
-                <option value="Whale">스카이웨일/나이트워커</option>
+                <option value="Skyborn">스카이본</option>
+                <option value="Whale">스카이웨일</option>
                 <option value="none">없음 (2기 신규 캐릭터)</option>
               </select>
             </div>
@@ -463,7 +523,7 @@
 
         <div class="panel" style="margin-top: 1.5rem;">
           <div class="panel-title">
-            <span>등록된 캐릭터 대장 및 2기 진영 설정</span>
+            <span>캐릭터 목록</span>
             <i class="fa-solid fa-address-book"></i>
           </div>
           <div class="char-table-container">
@@ -482,6 +542,80 @@
             </table>
           </div>
         </div>
+      </div>
+
+      <!-- TAB: Random Immersion Script Management (NEW) -->
+      <div class="tab-content" id="tab-scripts">
+        <div class="panel" style="border-color: var(--secondary-color);">
+          <div class="panel-title">
+            <span style="color: var(--secondary-color);"><i class="fa-solid fa-scroll"></i> 몰입 스크립트 관리</span>
+            <i class="fa-solid fa-circle-info" style="color: var(--secondary-color);"></i>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 4px;">
+            각 기반시설에 행동력을 투자할 때 랜덤으로 출력되는 몰입 대화 스크립트를 기수(1기/2기)별로 직접 추가·수정·삭제할 수 있습니다.
+          </p>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">
+            💡 변경 사항은 저장 즉시 클라우드 동기화 방에 연결된 모든 운영진에게 실시간으로 공유됩니다. 각 기반시설의 "기본값 복원" 버튼으로 최초 기본 스크립트 세트로 되돌릴 수 있습니다.
+          </p>
+        </div>
+
+        <div id="script-manager-container" style="margin-top: 1.5rem;"></div>
+      </div>
+
+      <!-- TAB: Ending Branch & Script Management (NEW) -->
+      <div class="tab-content" id="tab-endings">
+        <div class="panel" style="border-color: var(--secondary-color);">
+          <div class="panel-title">
+            <span style="color: var(--secondary-color);"><i class="fa-solid fa-flag-checkered"></i> 엔딩 분기점(임계값) 관리</span>
+            <button class="btn" style="font-size:0.72rem; height:auto; padding:4px 10px;" onclick="resetEndingThresholds()">
+              <i class="fa-solid fa-rotate-left"></i> 분기점 전체 기본값 복원
+            </button>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 10px;">
+            최종 엔딩이 갈리는 판정 기준값을 직접 조정할 수 있습니다. 값을 바꾸면 실시간 예측 엔딩과 최종 결산 결과에 즉시 반영됩니다.
+          </p>
+          <div id="ending-threshold-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+            <div class="form-group" style="margin:0;">
+              <label for="th-deadlockMarginPercent">교착(파국) 판정 격차 마진 (%)</label>
+              <input type="number" step="0.1" min="0" max="100" class="form-control" id="th-deadlockMarginPercent"
+                data-th-key="deadlockMarginPercent" onchange="updateEndingThreshold('deadlockMarginPercent', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">보수/혁명 격차 비율이 이 값 미만이면 [파국] 엔딩</span>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="th-minInfraTotal">최소 기반시설 총합 컷오프 (AP)</label>
+              <input type="number" step="1" min="0" class="form-control" id="th-minInfraTotal"
+                data-th-key="minInfraTotal" onchange="updateEndingThreshold('minInfraTotal', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">승리 진영 세부 지표 합이 이 값 미만이면 [정체/미완] 엔딩</span>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="th-dominantAttrRatio">무력/규율 편중 판정 비율</label>
+              <input type="number" step="0.01" min="0" max="1" class="form-control" id="th-dominantAttrRatio"
+                data-th-key="dominantAttrRatio" onchange="updateEndingThreshold('dominantAttrRatio', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">무력 또는 규율 비중이 이 비율을 넘으면 강경 엔딩</span>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="th-welfareIdeologyRatio">상생+이념 판정 비율</label>
+              <input type="number" step="0.01" min="0" max="1" class="form-control" id="th-welfareIdeologyRatio"
+                data-th-key="welfareIdeologyRatio" onchange="updateEndingThreshold('welfareIdeologyRatio', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">상생+이념 비중 합이 이 비율을 넘으면 명예 엔딩</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top: 1.5rem; border-color: var(--secondary-color);">
+          <div class="panel-title">
+            <span style="color: var(--secondary-color);"><i class="fa-solid fa-scroll"></i> 엔딩별 결산 스크립트 관리</span>
+            <i class="fa-solid fa-circle-info" style="color: var(--secondary-color);"></i>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 4px;">
+            최종 결산 시 출력되는 11가지 엔딩의 제목과 설명 스크립트를 직접 수정할 수 있습니다.
+          </p>
+          <p style="font-size: 0.78rem; color: var(--text-muted);">
+            💡 변경 사항은 저장 즉시 클라우드 동기화 방에 연결된 모든 운영진에게 실시간으로 공유됩니다. 설정 탭의 "엔딩 조건 가이드북"(엔딩 도감)도 이 탭에서 수정한 분기점·스크립트 내용에 맞춰 실시간으로 동기화되어 표시됩니다.
+          </p>
+        </div>
+
+        <div id="ending-script-manager-container" style="margin-top: 1rem;"></div>
       </div>
 
       <!-- TAB 4: Settings & Events -->
@@ -554,7 +688,7 @@
             보수/혁명 분기 및 격차 배분 비율, 각 속성별 활성 조건에 따라 결정되는 11가지 멀티 시나리오 엔딩 규칙을 확인하세요.
           </p>
           <div style="margin-top: 8px; display:flex; justify-content: flex-start; align-items:center;">
-            <button class="btn" style="border-color: var(--secondary-color); color: var(--secondary-color); font-weight: 700; height: 38px;" onclick="openModal('ending-guide-modal')">
+            <button class="btn" style="border-color: var(--secondary-color); color: var(--secondary-color); font-weight: 700; height: 38px;" onclick="openEndingGuide()">
               <i class="fa-solid fa-book-open"></i> 엔딩 조건 가이드북 열기
             </button>
           </div>
@@ -571,7 +705,7 @@
           </p>
           <div style="margin-top: 8px; display:flex; justify-content: space-between; align-items:center;">
             <button class="btn btn-danger" onclick="resetWholeSystem()"><i class="fa-solid fa-triangle-exclamation"></i> 전체 데이터 초기화</button>
-            <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">Everafter System v1.3.1 | GMs Dashboard</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">Everafter System v1.3.2 | GMs Dashboard</span>
           </div>
         </div>
 
@@ -587,9 +721,11 @@
       </h2>
       <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.5rem; border-bottom: 1px solid rgba(125,114,96,0.15); padding-bottom: 8px;">
         GM 운영과 밸런스 점검을 위한 엔딩 조건 가이드라인입니다. 현재 축적된 AP 점유율과 속성 비중에 따라 최종 결산 시 아래 11종의 엔딩 중 하나가 자동 도출됩니다.
+        <strong style="color: var(--primary-color);">본 도감은 엔딩 관리 탭에서 수정한 분기점(임계값)·엔딩 스크립트와 실시간으로 동기화됩니다.</strong>
       </p>
       
-      <div style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; padding-right: 8px; text-align: left;">
+      <div id="ending-guide-dynamic-body" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.5rem; padding-right: 8px; text-align: left;">
+        <!-- 아래 정적 콘텐츠는 로드 직후 renderEndingGuidebook()에 의해 엔딩 관리 탭의 실시간 설정값으로 대체됩니다. -->
         <!-- Faction 0: Stalemate -->
         <div>
           <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-family: var(--font-title);">
@@ -708,6 +844,23 @@
 
   </div>
 
+  <!-- MODAL: Season 1 Archive Viewer (NEW) -->
+  <div class="modal-overlay" id="s1-view-modal">
+    <div class="modal-box" style="max-width: 700px;">
+      <div class="modal-close" onclick="closeModal('s1-view-modal')"><i class="fa-solid fa-xmark"></i></div>
+      <h2 style="font-family: var(--font-title); font-size: 1.3rem; color: var(--primary-color); border-bottom: 1px solid rgba(125, 114, 96, 0.15); padding-bottom: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+        🌅 1기 에버라이트 최종 기록 열람
+      </h2>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 15px;">
+        1기 종료 시점에 고정 보존된 최종 데이터입니다. (읽기 전용 · 인원수 보정 배율 반영 / 2기 데이터에는 영향을 주지 않습니다.)
+      </p>
+      <div id="s1-view-content" style="font-size: 0.85rem; max-height: 480px; overflow-y: auto; padding-right: 6px;"></div>
+      <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(125,114,96,0.2); padding-top: 1rem; margin-top: 1rem;">
+        <button class="btn btn-primary" onclick="closeModal('s1-view-modal')" style="font-weight: 700; font-size: 0.85rem; justify-content: center; height: 36px; padding: 0 16px;">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Final Ending Result -->
   <div class="modal-overlay" id="ending-modal">
     <div class="modal-box" style="max-width: 700px;">
@@ -728,17 +881,15 @@
         🌅 Ever after 대시보드 엔진
       </h2>
       <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.2rem; font-weight: 700; background: rgba(0,0,0,0.06); padding: 2px 10px; border-radius: 20px; display: inline-block;">
-        v1.3.1 정식 릴리즈 (최종 업데이트: 2026-07-18 19:44:20)
+        v1.3.2 정식 릴리즈 (최종 업데이트: 2026-07-24 08:24:14)
       </div>
       <div style="font-size: 0.85rem; line-height: 1.6; text-align: left; background: rgba(255,255,255,0.02); padding: 14px; border-radius: 8px; border: 1px solid rgba(125, 114, 96, 0.1); margin-bottom: 1.5rem; color: var(--text-main);">
-        <p style="margin-bottom: 8px; font-weight: 800; color: var(--primary-color); font-family: var(--font-title); font-size: 0.95rem; border-bottom: 1px dashed rgba(125,114,96,0.2); padding-bottom: 6px; margin-top: 2px; letter-spacing: 1px;">KEY UPDATES (v1.3.1)</p>
+        <p style="margin-bottom: 8px; font-weight: 800; color: var(--primary-color); font-family: var(--font-title); font-size: 0.95rem; border-bottom: 1px dashed rgba(125,114,96,0.2); padding-bottom: 6px; margin-top: 2px; letter-spacing: 1px;">KEY UPDATES (v1.3.2)</p>
         <ul style="margin-left: 20px; list-style-type: disc; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; color: var(--text-muted);">
-          <li><strong>📖 엔딩 도감 탑재</strong>: 설정 탭에서 11가지 멀티 시나리오 엔딩 및 세부 공식 가이드북 상시 열람</li>
-          <li><strong>⚠️ 날짜 이동 리셋</strong>: 과거 시점 롤백 이동 시 미래 일차 데이터 자동 삭제 및 누적 AP 리셋</li>
-          <li><strong>⚖️ 규율 엔딩 및 밸런스</strong>: 사회 성향 규율 속성 엔딩 2종 추가 및 교착 격차 기준선 조정 (5% 미만)</li>
-          <li><strong>🎫 이벤트 패널 이전</strong>: 행동력 기입기 탭 우측으로 이벤트 패널 이동 및 수동 생성/삭제 기능 지원</li>
-          <li><strong>📜 기입 완료 스크립트</strong>: 기입 시 12개 시설별 상황 대화 랜덤 팝업 연출 및 디스코드용 즉시 복사</li>
-          <li><strong>🔒 GM 편집 모드</strong>: 기반시설 AP 오입력 방지용 잠금 🔓 토글 제어 스위치 제공</li>
+          <li><strong>📜 몰입 스크립트 관리 탭</strong>: 기반시설 12종 × 기수별 몰입 대화 스크립트를 직접 추가·수정·삭제 (기본값 복원 지원)</li>
+          <li><strong>🏁 엔딩 관리 탭</strong>: 엔딩 분기점(임계값) 4종과 11종 엔딩의 제목/결산 스크립트를 UI에서 직접 조정</li>
+          <li><strong>📖 엔딩 도감 실시간 동기화</strong>: 엔딩 관리 탭에서 수정한 분기점·스크립트가 가이드북 팝업에 즉시 반영</li>
+          <li><strong>🌅 1기 확인하기</strong>: 2기 전환 후에도 1기 최종 판도·속성 지수·기반시설 누적 AP를 읽기 전용 콘솔로 열람</li>
           <li style="margin-top: 5px; border-top: 1px dashed rgba(125,114,96,0.15); padding-top: 5px; list-style-type: none; margin-left: -20px; text-align: center;">⚙️ 세부 소스코드 수정 히스토리는 첫 번째 탭인 <strong>공지 & 패치노트</strong>를 참고하세요.</li>
         </ul>
       </div>
