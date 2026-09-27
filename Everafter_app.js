@@ -1,19 +1,19 @@
     const INITIAL_INFRASTRUCTURES = [
       // Skyborn (Stability)
-      { id: 'nobles', name: '귀족원 (House of Nobles)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
       { id: 'memorial', name: '창립자 기념관 (Founders Memorial)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
       { id: 'academy', name: '사관학교 (Officer Academy)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본의 미래 지휘관 생도들을 양성하는 군사 교육기관. 반복되는 훈련과 기강을 상징합니다.' },
-      { id: 'admin', name: '행정청 (Administration)', faction: 'stability', attribute: 'welfare', ap: 0, desc: '기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다.' },
-      { id: 'guard', name: '근위사령부 (Guard Command)', faction: 'stability', attribute: 'force', ap: 0, desc: '티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징.' },
       { id: 'society', name: '법학회 (Law Society)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '새로운 법률 해석과 정의, 법전을 수호하고 판례를 연구하는 법조 연구 학회.' },
-
+      { id: 'guard', name: '근위사령부 (Guard Command)', faction: 'stability', attribute: 'force', ap: 0, desc: '티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징.' },
+      { id: 'admin', name: '행정청 (Administration)', faction: 'stability', attribute: 'welfare', ap: 0, desc: '기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다.' },
+      { id: 'nobles', name: '귀족원 (House of Nobles)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
+      
       // Whale (Revolution)
-      { id: 'school', name: '웨일 학교 (Whale School)', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
+      { id: 'port', name: '아발론 항만 (Avalon Port)', faction: 'revolution', attribute: 'force', ap: 0, desc: '스카이웨일 선착장과 대규모 물류선, 무역 비공정이 입항하고 무장 투쟁력을 결집하는 항구.' },
+      { id: 'crews', name: '청년 선원단 (Youth Sailors)', faction: 'revolution', attribute: 'force', ap: 0, desc: '도전적인 비공정 항로 개척과 지상 탐색을 수행하는 젊은 선원들의 활기차고 강력한 물리 행동 단체.' },
       { id: 'union', name: '광산 노조 (Miners Union)', faction: 'revolution', attribute: 'order', ap: 0, desc: '스카이웨일 광산 노동자들의 권익과 안전, 자치 단결력을 대변하는 핵심 공동체.' },
+      { id: 'school', name: '웨일 학교 (Whale School)', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
       { id: 'community', name: '주민회관 (Community Center)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관.' },
       { id: 'workshop', name: '증기 공방 (Steam Workshop)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' },
-      { id: 'port', name: '아발론 항만 (Avalon Port)', faction: 'revolution', attribute: 'force', ap: 0, desc: '스카이웨일 선착장과 대규모 물류선, 무역 비공정이 입항하고 무장 투쟁력을 결집하는 항구.' },
-      { id: 'crews', name: '청년 선원단 (Youth Sailors)', faction: 'revolution', attribute: 'force', ap: 0, desc: '도전적인 비공정 항로 개척과 지상 탐색을 수행하는 젊은 선원들의 활기차고 강력한 물리 행동 단체.' }
     ];
 
     const EVENT_TEMPLATES = [
