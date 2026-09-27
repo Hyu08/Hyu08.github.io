@@ -1,4 +1,4 @@
- const INITIAL_INFRASTRUCTURES = [
+const INITIAL_INFRASTRUCTURES = [
 
       // Skyborn (Stability)
       { id: 'memorial', name: '창립자 기념관 (Founders Memorial)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
@@ -7,7 +7,7 @@
       { id: 'guard', name: '근위사령부 (Guard Command)', faction: 'stability', attribute: 'force', ap: 0, desc: '티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징.' },
       { id: 'admin', name: '행정청 (Administration)', faction: 'stability', attribute: 'welfare', ap: 0, desc: '기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다.' },
       { id: 'nobles', name: '귀족원 (House of Nobles)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
-   
+
       // Whale (Revolution)
       { id: 'port', name: '아발론 항만 (Avalon Port)', faction: 'revolution', attribute: 'force', ap: 0, desc: '스카이웨일 선착장과 대규모 물류선, 무역 비공정이 입항하고 무장 투쟁력을 결집하는 항구.' },
       { id: 'crews', name: '청년 선원단 (Youth Sailors)', faction: 'revolution', attribute: 'force', ap: 0, desc: '도전적인 비공정 항로 개척과 지상 탐색을 수행하는 젊은 선원들의 활기차고 강력한 물리 행동 단체.' },
@@ -15,43 +15,47 @@
       { id: 'school', name: '웨일 학교 (Whale School)', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
       { id: 'community', name: '주민회관 (Community Center)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관.' },
       { id: 'workshop', name: '증기 공방 (Steam Workshop)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' }
- // 시설별 시즌 1 / 시즌 2 명칭 매핑
-const INFRA_NAMES_BY_SEASON = {
-  memorial:  { 1: '창립자 기념관', 2: '국가재건기념관' },
-  academy:   { 1: '사관학교',     2: '국가사관학교' },
-  society:   { 1: '법학회',       2: '법률원' },
-  guard:     { 1: '근위사령부',   2: '스카이가드 사령부' },
-  admin:     { 1: '행정청',       2: '국가행정청' },
-  nobles:    { 1: '귀족원',       2: '국가평의회' },
-  port:      { 1: '아발론 항만',  2: '아발론 자유항' },
-  crews:     { 1: '청년 선원단',  2: '나이트워커 행동단' },
-  union:     { 1: '광산 노조',    2: '노동자 연맹' },
-  school:    { 1: '웨일 학교',    2: '시민교육원' },
-  community: { 1: '주민회관',     2: '공동체회관' },
-  workshop:  { 1: '증기 공방',    2: '독립 공방' }
-};
+    ];
 
-// 시즌에 맞는 시설명 반환 (season 생략 시 현재 시즌 기준)
-function getInfraDisplayName(infraOrId, season) {
-  const infra = typeof infraOrId === 'string'
-    ? state.infrastructures.find(i => i.id === infraOrId)
-    : infraOrId;
-  if (!infra) return typeof infraOrId === 'string' ? infraOrId : '';
-  const s = season || state.season;
-  const map = INFRA_NAMES_BY_SEASON[infra.id];
-  return (map && map[s]) || infra.name;
-}   
- ];
+    // ============================================================
+    // 시설별 시즌 1 / 시즌 2 명칭 매핑
+    // (반드시 INITIAL_INFRASTRUCTURES 배열이 닫힌 "뒤"에 위치해야 합니다)
+    // ============================================================
+    const INFRA_NAMES_BY_SEASON = {
+      memorial:  { 1: '창립자 기념관', 2: '국가재건기념관' },
+      academy:   { 1: '사관학교',     2: '국가사관학교' },
+      society:   { 1: '법학회',       2: '법률원' },
+      guard:     { 1: '근위사령부',   2: '스카이가드 사령부' },
+      admin:     { 1: '행정청',       2: '국가행정청' },
+      nobles:    { 1: '귀족원',       2: '국가평의회' },
+      port:      { 1: '아발론 항만',  2: '아발론 자유항' },
+      crews:     { 1: '청년 선원단',  2: '나이트워커 행동단' },
+      union:     { 1: '광산 노조',    2: '노동자 연맹' },
+      school:    { 1: '웨일 학교',    2: '시민교육원' },
+      community: { 1: '주민회관',     2: '공동체회관' },
+      workshop:  { 1: '증기 공방',    2: '독립 공방' }
+    };
+
+    // 시즌에 맞는 시설명 반환 (season 생략 시 현재 시즌 기준)
+    function getInfraDisplayName(infraOrId, season) {
+      const infra = typeof infraOrId === 'string'
+        ? state.infrastructures.find(i => i.id === infraOrId)
+        : infraOrId;
+      if (!infra) return typeof infraOrId === 'string' ? infraOrId : '';
+      const s = season || state.season;
+      const map = INFRA_NAMES_BY_SEASON[infra.id];
+      return (map && map[s]) || infra.name;
+    }
 
     const EVENT_TEMPLATES = [
       { id: 'festival', name: '[임시] 건국 기념제 (200주년)', season: 1, type: 'multiply', target: ['nobles', 'memorial'], multiplier: 1.5, desc: '창립자 기념관 및 귀족원 투자 효율 1.5배 상승' },
       { id: 'protest', name: '[임시] 민중 가로 시위', season: 1, type: 'multiply', target: ['union', 'community'], multiplier: 1.5, desc: '광산 노조 및 주민회관 투자 효율 1.5배 상승' },
       { id: 'light_verdict', name: '[임시] 라이트 강경 판결', season: 1, type: 'block', target: ['union'], multiplier: 0, desc: '광산 노조 강제 제재 조치로 인한 투자 일시 봉쇄' },
       { id: 'speech', name: '[임시] 공개 광장 연설', season: 1, type: 'multiply', target: ['school', 'society'], multiplier: 2.0, desc: '학술 선동 효과로 법학회 및 웨일학교 투자 효율 2배 상승' },
-      
-      { id: 'strike', name: '[임시] 총파업 결의령', season: 2, type: 'complex', target: [], multiplier: 0, desc: '광산 노조/청년 선원단 효율 2배 상승, 단 행정청 및 증기 공방 투자 완전 봉쇄' },
-      { id: 'censorship', name: '[임시] 지하 언론 특별단속', season: 2, type: 'block', target: ['school', 'community'], multiplier: 0, desc: '웨일학교 및 주민회관 강제 휴교/폐쇄 조치로 투자 봉쇄' },
-      { id: 'martial_law', name: '[임시] 계엄령 선포', season: 2, type: 'complex', target: [], multiplier: 0, desc: '근위사령부 효율 2배 상승, 단 주민회관/아발론 항만 투자 완전 봉쇄' }
+
+      { id: 'strike', name: '[임시] 총파업 결의령', season: 2, type: 'complex', target: [], multiplier: 0, desc: '노동자 연맹/나이트워커 행동단 효율 2배 상승, 단 국가행정청 및 독립 공방 투자 완전 봉쇄' },
+      { id: 'censorship', name: '[임시] 지하 언론 특별단속', season: 2, type: 'block', target: ['school', 'community'], multiplier: 0, desc: '시민교육원 및 공동체회관 강제 휴교/폐쇄 조치로 투자 봉쇄' },
+      { id: 'martial_law', name: '[임시] 계엄령 선포', season: 2, type: 'complex', target: [], multiplier: 0, desc: '스카이가드 사령부 효율 2배 상승, 단 공동체회관/아발론 자유항 투자 완전 봉쇄' }
     ];
 
     let isEditMode = false;
@@ -150,24 +154,28 @@ function getInfraDisplayName(infraOrId, season) {
         document.getElementById("evt-multiplier").disabled = false;
       }
     }
+
     function saveToLocalStorage() {
       localStorage.setItem('tirnanog_state', JSON.stringify(state));
       updateUI();
       pushToRealtime();
     }
-// 로컬 스토리지에서 데이터를 불러오는 함수
-function loadFromLocalStorage() {
-  const savedData = localStorage.getItem('tirnanog_state');
-  if (savedData) {
-    try {
-      const parsedData = JSON.parse(savedData);
-      state = sanitizeStateData(parsedData);
-      ensureConfigState();
-    } catch (e) {
-      console.error("[Everafter] 로컬 스토리지 데이터 파싱 오류:", e);
+
+    // 로컬 스토리지에서 데이터를 불러오는 함수
+    function loadFromLocalStorage() {
+      const savedData = localStorage.getItem('tirnanog_state');
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          // 데이터 로드 시 무결성 검증 및 기본값 보정을 즉각 수행
+          state = sanitizeStateData(parsedData);
+          ensureConfigState();
+        } catch (e) {
+          console.error("[Everafter] 로컬 스토리지 데이터 파싱 오류:", e);
+        }
+      }
     }
-  }
-}
+
     function createNewEvent(e) {
       e.preventDefault();
       const name = document.getElementById("evt-name").value.trim();
@@ -190,20 +198,20 @@ function loadFromLocalStorage() {
       state.customEvents.push(newEvt);
       saveToLocalStorage();
       updateUI();
-      
+
       document.getElementById("evt-name").value = "";
       document.getElementById("evt-desc").value = "";
-      
+
       alert(`신규 이벤트 [${name}]가 현재 기수에 정상 등록되었습니다.`);
     }
 
     function deleteCustomEvent(evtId, e) {
       if (e) e.stopPropagation();
       if (!confirm("이 커스텀 이벤트를 삭제하시겠습니까?")) return;
-      
+
       state.activeEvents = state.activeEvents.filter(id => id !== evtId);
       state.customEvents = (state.customEvents || []).filter(evt => evt.id !== evtId);
-      
+
       saveToLocalStorage();
       updateUI();
     }
@@ -212,7 +220,7 @@ function loadFromLocalStorage() {
       if (e) e.stopPropagation();
       const evt = (state.customEvents || []).find(x => x.id === evtId);
       if (!evt) return;
-      
+
       const payload = {
         name: evt.name,
         desc: evt.desc,
@@ -221,7 +229,7 @@ function loadFromLocalStorage() {
         target: evt.target,
         multiplier: evt.multiplier
       };
-      
+
       try {
         const code = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
         navigator.clipboard.writeText(code).then(() => {
@@ -241,15 +249,15 @@ function loadFromLocalStorage() {
         alert("이벤트 공유 코드를 먼저 입력해 주세요.");
         return;
       }
-      
+
       try {
         const jsonStr = decodeURIComponent(escape(atob(code)));
         const data = JSON.parse(jsonStr);
-        
+
         if (!data.name || !data.desc || !data.type || !data.target) {
           throw new Error("올바르지 않은 공유 포맷");
         }
-        
+
         const newEvt = {
           id: "evt_custom_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
           name: data.name,
@@ -259,12 +267,12 @@ function loadFromLocalStorage() {
           target: data.target,
           multiplier: data.multiplier || 1.0
         };
-        
+
         if (!state.customEvents) state.customEvents = [];
         state.customEvents.push(newEvt);
         saveToLocalStorage();
         updateUI();
-        
+
         codeInput.value = "";
         alert(`외부 이벤트 [${data.name}]를 성공적으로 수입하여 현재 기수 대장에 추가했습니다!`);
       } catch (err) {
@@ -385,7 +393,7 @@ function loadFromLocalStorage() {
 
       const currentSeason = state.season;
       const currentDay = state.day;
-      
+
       let stabTodayRaw = 0;
       let revTodayRaw = 0;
       let mostActiveInfra = null;
@@ -398,7 +406,8 @@ function loadFromLocalStorage() {
           if (infra) {
             if (infra.faction === "stability") stabTodayRaw += log.ap;
             else revTodayRaw += log.ap;
-            infraDailyMap[infra.name] = (infraDailyMap[infra.name] || 0) + log.ap;
+            const dispName = getInfraDisplayName(infra, currentSeason);
+            infraDailyMap[dispName] = (infraDailyMap[dispName] || 0) + log.ap;
           }
         }
       });
@@ -472,9 +481,10 @@ function loadFromLocalStorage() {
       const list = state.season === 1 ? scriptSetObj.season1 : scriptSetObj.season2;
       const randIdx = Math.floor(Math.random() * list.length);
       const chosenScript = list[randIdx];
+      const infraDispName = getInfraDisplayName(infra);
 
       const critTag = isCritical ? " [크리티컬 대성공!]" : "";
-      lastGeneratedScript = `[${state.season}기 Day ${state.day}] ${charName} 캐릭터 ➔ ${infra.name} 투자 활동 결과${critTag}:\n\n"${chosenScript}"`;
+      lastGeneratedScript = `[${state.season}기 Day ${state.day}] ${charName} 캐릭터 ➔ ${infraDispName} 투자 활동 결과${critTag}:\n\n"${chosenScript}"`;
 
       let critBannerHTML = "";
       if (isCritical) {
@@ -488,7 +498,7 @@ function loadFromLocalStorage() {
       document.getElementById("script-popup-text").innerHTML = `
         ${critBannerHTML}
         <strong>캐릭터명</strong>: ${charName}<br>
-        <strong>투자 기반시설</strong>: ${infra.name}<br>
+        <strong>투자 기반시설</strong>: ${infraDispName}<br>
         <strong>소모한 행동력</strong>: ${baseAP} AP (반영: ${finalAP} AP)<br>
         <hr style="border: 0; border-top: 1px dashed rgba(125, 114, 96, 0.2); margin: 10px 0;">
         <span style="font-style: italic; color: var(--text-main); font-weight:700;">"${chosenScript}"</span>
@@ -527,7 +537,7 @@ function loadFromLocalStorage() {
           }
         }
       });
-      
+
       // [요청 사항 반영] 로그가 날아가서 합산이 안 되더라도, 기반시설 자체의 AP가 존재한다면 무조건 가져옴
       return sum > 0 ? sum : infra.ap;
     }
@@ -566,17 +576,12 @@ function loadFromLocalStorage() {
 
       return totalEffective;
     }
-     
-
- 
-
-}
 
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      
+
       document.getElementById(tabId).classList.add('active');
       const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
       if (btn) btn.classList.add('active');
@@ -609,7 +614,7 @@ function loadFromLocalStorage() {
 
         const titleSpan = document.createElement('span');
         const factionColor = infra.faction === 'stability' ? '#3366cc' : '#dc3545';
-        titleSpan.innerHTML = `<i class="fa-solid ${infra.faction === 'stability' ? 'fa-landmark' : 'fa-fist-raised'}" style="color:${factionColor};"></i> ${infra.name}`;
+        titleSpan.innerHTML = `<i class="fa-solid ${infra.faction === 'stability' ? 'fa-landmark' : 'fa-fist-raised'}" style="color:${factionColor};"></i> ${getInfraDisplayName(infra, 1)} / ${getInfraDisplayName(infra, 2)}`;
 
         const resetBtn = document.createElement('button');
         resetBtn.className = 'btn';
@@ -625,8 +630,8 @@ function loadFromLocalStorage() {
         grid.style.cssText = 'display:grid; grid-template-columns: 1fr 1fr; gap:1.2rem; margin-top:0.8rem;';
 
         [
-          { key: 'season1', label: '1기 (에버라이트) 스크립트' },
-          { key: 'season2', label: '2기 (에버나이트) 스크립트' }
+          { key: 'season1', label: `1기 (에버라이트) 스크립트 — ${getInfraDisplayName(infra, 1)}` },
+          { key: 'season2', label: `2기 (에버나이트) 스크립트 — ${getInfraDisplayName(infra, 2)}` }
         ].forEach(seasonInfo => {
           const col = document.createElement('div');
 
@@ -704,8 +709,7 @@ function loadFromLocalStorage() {
 
     function resetScriptsForInfra(infraId) {
       if (!RANDOM_SCRIPTS[infraId]) return;
-      const infra = state.infrastructures.find(i => i.id === infraId);
-      const infraName = infra ? infra.name : infraId;
+      const infraName = getInfraDisplayName(infraId);
       if (!confirm(`"${infraName}"의 스크립트를 기본값으로 되돌리시겠습니까?\n저장된 커스텀 스크립트는 모두 사라집니다.`)) return;
       ensureScriptState();
       state.scripts[infraId] = JSON.parse(JSON.stringify(RANDOM_SCRIPTS[infraId]));
@@ -943,9 +947,10 @@ function loadFromLocalStorage() {
         if (c.startClass === 'Whale') countWhale++;
       });
 
+      // 1기 열람 콘솔이므로 항상 1기 명칭으로 표시
       const rowsHTML = infraRows.map(({ infra, raw, eff }) => `
         <tr style="border-bottom: 1px dashed rgba(125,114,96,0.12);">
-          <td style="padding: 4px 8px; font-weight: 700; color: ${infra.faction === 'stability' ? '#3366cc' : '#dc3545'};">${infra.name}</td>
+          <td style="padding: 4px 8px; font-weight: 700; color: ${infra.faction === 'stability' ? '#3366cc' : '#dc3545'};">${getInfraDisplayName(infra, 1)}</td>
           <td style="padding: 4px 8px; text-align: center;">${getKoreanAttribute(infra.attribute)}</td>
           <td style="padding: 4px 8px; text-align: right; font-weight: 700;">${raw} AP</td>
           <td style="padding: 4px 8px; text-align: right; color: var(--primary-color); font-weight: 700;">${Math.round(eff)} AP</td>
@@ -1060,10 +1065,10 @@ function loadFromLocalStorage() {
       // -------------------------------------------------------------
 
       document.body.setAttribute('data-season', state.season);
-      
+
       const badgeText = state.season === 1 ? '1기 에버라이트' : '2기 에버나이트';
       document.getElementById('season-badge-text').innerText = badgeText;
-      
+
       const logoIcon = document.getElementById('logo-icon');
       const transBtn = document.getElementById('btn-season-trans');
       if (state.season === 1) {
@@ -1136,7 +1141,7 @@ function loadFromLocalStorage() {
       let s1Revolution = 0;
       let s1StabForce = 0, s1StabOrder = 0, s1StabIdeology = 0, s1StabWelfare = 0;
       let s1RevForce = 0, s1RevOrder = 0, s1RevIdeology = 0, s1RevWelfare = 0;
-      
+
       state.infrastructures.forEach(infra => {
         let s1Raw = 0;
         state.logs.forEach(log => {
@@ -1177,7 +1182,7 @@ function loadFromLocalStorage() {
       let s2Revolution = 0;
       let s2StabForce = 0, s2StabOrder = 0, s2StabIdeology = 0, s2StabWelfare = 0;
       let s2RevForce = 0, s2RevOrder = 0, s2RevIdeology = 0, s2RevWelfare = 0;
-      
+
       if (state.season === 2) {
         state.infrastructures.forEach(infra => {
           let s2Raw = 0;
@@ -1254,13 +1259,13 @@ function loadFromLocalStorage() {
       // Update text in legend
       document.getElementById('val-stab-force').innerText = Math.round(stabForce);
       document.getElementById('val-rev-force').innerText = Math.round(revForce);
-      
+
       document.getElementById('val-stab-order').innerText = Math.round(stabOrder);
       document.getElementById('val-rev-order').innerText = Math.round(revOrder);
-      
+
       document.getElementById('val-stab-ideology').innerText = Math.round(stabIdeology);
       document.getElementById('val-rev-ideology').innerText = Math.round(revIdeology);
-      
+
       document.getElementById('val-stab-welfare').innerText = Math.round(stabWelfare);
       document.getElementById('val-rev-welfare').innerText = Math.round(revWelfare);
 
@@ -1385,70 +1390,70 @@ function loadFromLocalStorage() {
       return attr;
     }
 
-function renderInfrastructureGrids() {
-  const skybornGrid = document.getElementById('skyborn-grid');
-  const whaleGrid = document.getElementById('whale-grid');
-  if (!skybornGrid || !whaleGrid) return;   // 맨 위로 이동
+    function renderInfrastructureGrids() {
+      const skybornGrid = document.getElementById('skyborn-grid');
+      const whaleGrid = document.getElementById('whale-grid');
+      if (!skybornGrid || !whaleGrid) return;
 
-  skybornGrid.innerHTML = '';
-  whaleGrid.innerHTML = '';
+      skybornGrid.innerHTML = '';
+      whaleGrid.innerHTML = '';
 
-  const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
-  const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
+      const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
+      const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
 
-  state.infrastructures.forEach(infra => {
-    const displayName = getInfraDisplayName(infra);   // 카드 생성 전에 계산
-    const mods = getAPModifier(infra.id);
-    const multiplier = mods.multiplier;
-    const blocked = mods.blocked;
-    const currentAP = getDisplayAP(infra.id);
-    const effectiveAP = getEffectiveAP(infra.id);
-    const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
+      state.infrastructures.forEach(infra => {
+        const displayName = getInfraDisplayName(infra);   // 시즌별 명칭
+        const mods = getAPModifier(infra.id);
+        const multiplier = mods.multiplier;
+        const blocked = mods.blocked;
+        const currentAP = getDisplayAP(infra.id);
+        const effectiveAP = getEffectiveAP(infra.id);
+        const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
 
-    const actionStyle = isEditMode
-      ? "opacity: 1.0; pointer-events: auto; border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);"
-      : "opacity: 0.45; pointer-events: none;";
-    const btnState = isEditMode ? "" : "disabled";
-    const inputState = isEditMode ? "" : "readonly";
+        const actionStyle = isEditMode
+          ? "opacity: 1.0; pointer-events: auto; border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);"
+          : "opacity: 0.45; pointer-events: none;";
+        const btnState = isEditMode ? "" : "disabled";
+        const inputState = isEditMode ? "" : "readonly";
 
-    const cardHTML = `
-      <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
-        <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
-        <div>
-          <div class="infra-header">
-            <i class="${getInfraIcon(infra.id)}"></i>
-            <span class="infra-title">${displayName}</span>
-          </div>
-          <div class="infra-desc">${infra.desc}</div>
-        </div>
-        <div>
-          <div class="infra-progress-container">
-            <div class="infra-progress-bar">
-              <div class="infra-progress-fill" style="width: ${fillPercent}%;"></div>
+        const cardHTML = `
+          <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
+            <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
+            <div>
+              <div class="infra-header">
+                <i class="${getInfraIcon(infra.id)}"></i>
+                <span class="infra-title">${displayName}</span>
+              </div>
+              <div class="infra-desc">${infra.desc}</div>
             </div>
-            <div class="infra-stats-row">
-              <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
-              <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : (multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상')}</span>
+            <div>
+              <div class="infra-progress-container">
+                <div class="infra-progress-bar">
+                  <div class="infra-progress-fill" style="width: ${fillPercent}%;"></div>
+                </div>
+                <div class="infra-stats-row">
+                  <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
+                  <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : (multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상')}</span>
+                </div>
+              </div>
+              <div class="infra-actions" style="${actionStyle}">
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${btnState}>-1</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${btnState}>-5</button>
+                <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${inputState}>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${btnState}>+1</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${btnState}>+5</button>
+              </div>
             </div>
           </div>
-          <div class="infra-actions" style="${actionStyle}">
-            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${btnState}>-1</button>
-            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${btnState}>-5</button>
-            <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${inputState}>
-            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${btnState}>+1</button>
-            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${btnState}>+5</button>
-          </div>
-        </div>
-      </div>
-    `;
+        `;
 
-    if (infra.faction === 'stability') {
-      skybornGrid.innerHTML += cardHTML;
-    } else {
-      whaleGrid.innerHTML += cardHTML;
+        if (infra.faction === 'stability') {
+          skybornGrid.innerHTML += cardHTML;
+        } else {
+          whaleGrid.innerHTML += cardHTML;
+        }
+      });
     }
-  });
-}
 
 
     function getInfraIcon(id) {
@@ -1485,22 +1490,16 @@ function renderInfrastructureGrids() {
     }
 
     // 하루 결산(EOD) 또는 강제 날짜 이동으로 state.day가 바뀐 직후 호출되는 함수.
-    // AP 자체는 로그 기반으로 파생 계산되므로 저장된 값을 지울 필요는 없지만,
-    // 날짜 전환 시점에 캐릭터 선택 드롭다운 및 캐릭터 테이블의 AP 표시를
-    // 명시적으로 즉시 새로고침하여 "기존 값(DAILY_AP_LIMIT)으로 초기화"된 화면을 보장합니다.
     function resetDailyActionPoints() {
       populateDropdowns();
       renderCharacterTable();
     }
 
 
-
-
-
     function populateDropdowns() {
       const charSelect = document.getElementById('log-char-select');
       const infraSelect = document.getElementById('log-infra-select');
-      
+
       const savedChar = charSelect.value;
       const savedInfra = infraSelect.value;
 
@@ -1522,7 +1521,7 @@ function renderInfrastructureGrids() {
       infraSelect.innerHTML = '<option value="">-- 기반시설을 선택해 주세요 --</option>';
       state.infrastructures.forEach(infra => {
         const prefix = infra.faction === 'stability' ? (state.season === 1 ? '스카이본' : '스카이가드') : (state.season === 1 ? '스카이웨일' : '나이트워커');
-        infraSelect.innerHTML += `<option value="${infra.id}">[${prefix}] ${infra.name}</option>`;
+        infraSelect.innerHTML += `<option value="${infra.id}">[${prefix}] ${getInfraDisplayName(infra)}</option>`;
       });
 
       charSelect.value = savedChar;
@@ -1557,7 +1556,7 @@ function renderInfrastructureGrids() {
       // Slice to maximum 50 recent logs and render newest first
       sortedLogs.reverse().slice(0, 50).forEach(log => {
         if (log.charId === 'SYSTEM') {
-          // 시스템 이벤트는 타임라인 분기선 배너로 세련되게 렌더링
+          // 시스템 이벤트는 타임라인 분기선 배너로 렌더링
           logsList.innerHTML += `
             <div class="log-entry system-event-banner" style="border: 1px dashed var(--primary-color); background: rgba(66, 153, 225, 0.06); text-align: center; font-weight: bold; color: var(--primary-color); padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <i class="fa-solid fa-clock-rotate-left"></i>
@@ -1567,37 +1566,42 @@ function renderInfrastructureGrids() {
           return;
         }
 
-        // Determine season label (dynamic based on stored metadata or ID pattern)
-        let seasonLabel = '';
+        // Determine season (dynamic based on stored metadata or ID pattern)
+        let logSeason = null;
         if (log.season) {
-          seasonLabel = `${log.season}기 `;
+          logSeason = log.season;
         } else if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s1_')) {
-          seasonLabel = '1기 ';
+          logSeason = 1;
         } else if (log.id && typeof log.id === 'string' && log.id.startsWith('log_s2_')) {
-          seasonLabel = '2기 ';
+          logSeason = 2;
         } else {
           // Fallback check against the sortedLogs array
           const transIdx = sortedLogs.findIndex(l => l.id === 'log_transition');
           const thisIdx = sortedLogs.indexOf(log);
           if (transIdx !== -1 && thisIdx !== -1) {
-            seasonLabel = thisIdx < transIdx ? '1기 ' : '2기 ';
+            logSeason = thisIdx < transIdx ? 1 : 2;
           } else {
-            seasonLabel = state.season === 1 ? '1기 ' : '2기 ';
+            logSeason = state.season;
           }
         }
+        const seasonLabel = `${logSeason}기 `;
+
+        // 로그가 기록된 시즌 기준의 시설명 (옛 로그도 올바르게 표시)
+        const logInfraName = state.infrastructures.some(i => i.id === log.infraId)
+          ? getInfraDisplayName(log.infraId, logSeason)
+          : log.infraName;
 
         const critBadgeHTML = log.isCritical ? `<span class="crit-badge" style="background: linear-gradient(135deg, #ff4e50, #f9d423); color: white; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 6px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 5px rgba(255,78,80,0.5);"><i class="fa-solid fa-fire"></i> CRITICAL!</span>` : "";
 
         logsList.innerHTML += `
           <div class="log-entry">
-            <span>[${seasonLabel}Day ${log.day}] <strong>${log.charName}</strong>: ${log.infraName} 에 ${log.ap} AP 투자 
+            <span>[${seasonLabel}Day ${log.day}] <strong>${log.charName}</strong>: ${logInfraName} 에 ${log.ap} AP 투자
             <span style="color: var(--text-muted); font-size: 0.75rem;">(보정 전: ${log.baseAP} AP, 적용 배율: x${log.multiplier})</span>${critBadgeHTML}</span>
             <button class="btn" style="padding: 0 4px; font-size: 0.7rem; border-color: var(--danger-color); color: var(--danger-color); flex-shrink: 0;" onclick="deleteLog('${log.id}')"><i class="fa-solid fa-trash"></i> 삭제</button>
           </div>
         `;
       });
     }
-
 
 
     function renderCharacterTable() {
@@ -1650,7 +1654,7 @@ function renderInfrastructureGrids() {
       const grid = document.getElementById("event-toggle-grid");
       if (!grid) return;
       grid.innerHTML = "";
-      
+
       const filteredTemplates = getEventTemplates().filter(t => t.season === state.season);
 
       if (filteredTemplates.length === 0) {
@@ -1739,7 +1743,7 @@ function renderInfrastructureGrids() {
       }
 
       const { multiplier, blocked } = getAPModifier(infraId);
-      
+
       if (blocked) {
         alert("선택하신 기반시설은 현재 활성화된 이벤트에 의해 임시 봉쇄 상태입니다.");
         return;
@@ -1759,11 +1763,9 @@ function renderInfrastructureGrids() {
 
       if (charFaction === 'stability') {
         const academyAP = getDisplayAP('academy');
-        // +1% critical chance per 10 AP in Academy, max +25%
         bonusCritRate = Math.min(0.25, academyAP * 0.001);
       } else if (charFaction === 'revolution') {
         const schoolAP = getDisplayAP('school');
-        // +1% critical chance per 10 AP in School, max +25%
         bonusCritRate = Math.min(0.25, schoolAP * 0.001);
       }
 
@@ -1783,7 +1785,7 @@ function renderInfrastructureGrids() {
         charId,
         charName: char.name,
         infraId,
-        infraName: infra.name,
+        infraName: getInfraDisplayName(infra),
         baseAP,
         multiplier,
         ap: finalAP,
@@ -1808,7 +1810,7 @@ function renderInfrastructureGrids() {
 
       const log = state.logs[logIdx];
       const infra = state.infrastructures.find(i => i.id === log.infraId);
-      
+
       if (infra) {
         infra.ap = Math.max(0, infra.ap - log.ap);
       }
@@ -1834,7 +1836,7 @@ function renderInfrastructureGrids() {
           charId: "GM",
           charName: "🔧 GM 수치 조정",
           infraId: infra.id,
-          infraName: infra.name,
+          infraName: getInfraDisplayName(infra),
           baseAP: actualDelta,
           multiplier: 1.0,
           ap: actualDelta
@@ -1861,7 +1863,7 @@ function renderInfrastructureGrids() {
           charId: "GM",
           charName: "🔧 GM 수치 조정",
           infraId: infra.id,
-          infraName: infra.name,
+          infraName: getInfraDisplayName(infra),
           baseAP: delta,
           multiplier: 1.0,
           ap: delta
@@ -1886,22 +1888,20 @@ function renderInfrastructureGrids() {
       const targetDay = state.day + delta;
       if (targetDay < 1 || targetDay > 4) return;
 
-      const confirmMsg = delta < 0 
+      const confirmMsg = delta < 0
         ? `정말로 Day ${targetDay}로 돌아가시겠습니까?\n\n(주의: Day ${state.day}에 기입했던 모든 행동력 로그와 시뮬레이션 데이터가 영구 삭제되고 Day ${targetDay} 데이터로 리셋됩니다!)`
         : `정말로 Day ${targetDay}로 강제 이동하시겠습니까?\n\n(주의: 하루 결산(EOD) 마감 없이 날짜를 이동하는 경우, 이동 과정에서 새 날짜의 기존 로그들이 초기화될 수 있습니다.)`;
 
       if (!confirm(confirmMsg)) return;
 
-      // Physically delete logs of the current season that are in the future of targetDay
       const currentSeason = state.season;
-      
+
       // Filter out future logs
       state.logs = state.logs.filter(log => {
         if (log.season !== currentSeason) return true;
         return log.day <= targetDay;
       });
 
-      // Update state.day
       state.day = targetDay;
 
       // Sync infra.ap with remaining logs
@@ -1953,23 +1953,11 @@ function renderInfrastructureGrids() {
           return;
         }
 
+        // 기반시설 뼈대는 INITIAL_INFRASTRUCTURES를 그대로 사용 (명칭 일관성 유지)
         state = {
           season: 1,
           day: 4,
-          infrastructures: [
-            { id: "nobles", name: "귀족원 (House of Nobles)", faction: "stability", attribute: "order", ap: 0, desc: "스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력 and 지배 규율을 의미합니다." },
-            { id: "memorial", name: "창립자 기념관 (Founders Memorial)", faction: "stability", attribute: "ideology", ap: 0, desc: "건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다." },
-            { id: "academy", name: "귀족 아카데미 (Noble Academy)", faction: "stability", attribute: "order", ap: 0, desc: "스카이본 자제들의 정규 엘리트 아카데미. 문화와 관습을 교육합니다." },
-            { id: "admin", name: "행정청 (Administration)", faction: "stability", attribute: "welfare", ap: 0, desc: "기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다." },
-            { id: "guard", name: "근위사령부 (Guard Command)", faction: "stability", attribute: "force", ap: 0, desc: "티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징." },
-            { id: "society", name: "왕립학회 (Royal Society)", faction: "stability", attribute: "ideology", ap: 0, desc: "기술 절제주의 이념과 공식 지적 유산을 연구하고 검열하는 학술 기구." },
-            { id: "school", name: "웨일 학교 (Whale School)", faction: "revolution", attribute: "ideology", ap: 0, desc: "솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다." },
-            { id: "union", name: "노동조합 (Labor Union)", faction: "revolution", attribute: "order", ap: 0, desc: "스카이웨일 노동자들의 권익과 자치 단결력을 대변하는 노동 핵심 공동체." },
-            { id: "community", name: "주민회관 (Community Center)", faction: "revolution", attribute: "welfare", ap: 0, desc: "웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관." },
-            { id: "workshop", name: "공방 (Workshop)", faction: "revolution", attribute: "welfare", ap: 0, desc: "웨일 기술자들이 아날로그 수공예 및 최신 효율 장비를 유지 관리하는 자립 경제 거점." },
-            { id: "port", name: "항만노조 (Port Union)", faction: "revolution", attribute: "force", ap: 0, desc: "스카이웨일 작업선 선원들이 소속된 최대 운송 노조. 해양 및 공중 물류 무력을 장악." },
-            { id: "crews", name: "작업반 (Work Crews)", faction: "revolution", attribute: "force", ap: 0, desc: "가장 험난한 지상 환경 자원 채굴을 수행하는 거친 현장 인력들의 실질적 물리 투쟁력." }
-          ],
+          infrastructures: JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES)),
           characters: [],
           activeEvents: [],
           logs: [],
@@ -1990,7 +1978,6 @@ function renderInfrastructureGrids() {
         // Random bias for S1 to create varying faction sizes on each run
         const s1Bias = 0.15 + Math.random() * 0.70; // Bias between 15% and 85%
 
-        // Generate characters with random class bias
         for (let i = 0; i < 40; i++) {
           state.characters.push({
             id: "char_mock_" + (i + 1).toString().padStart(2, '0'),
@@ -2001,24 +1988,24 @@ function renderInfrastructureGrids() {
         }
 
         const distribution = [
-          { id: "nobles", name: "귀족원", count: 14 },
-          { id: "memorial", name: "창립자 기념관", count: 13 },
-          { id: "academy", name: "사관학교", count: 12 },
-          { id: "admin", name: "행정청", count: 16 },
-          { id: "guard", name: "근위사령부", count: 13 },
-          { id: "society", name: "법학회", count: 12 },
-          { id: "school", name: "웨일 학교", count: 8 },
-          { id: "union", name: "광산 노조", count: 8 },
-          { id: "community", name: "주민회관", count: 8 },
-          { id: "workshop", name: "증기 공방", count: 7 },
-          { id: "port", name: "아발론 항만", count: 7 },
-          { id: "crews", name: "청년 선원단", count: 7 }
+          { id: "nobles", count: 14 },
+          { id: "memorial", count: 13 },
+          { id: "academy", count: 12 },
+          { id: "admin", count: 16 },
+          { id: "guard", count: 13 },
+          { id: "society", count: 12 },
+          { id: "school", count: 8 },
+          { id: "union", count: 8 },
+          { id: "community", count: 8 },
+          { id: "workshop", count: 7 },
+          { id: "port", count: 7 },
+          { id: "crews", count: 7 }
         ];
 
         let logPool = [];
         distribution.forEach(target => {
           for (let c = 0; c < target.count; c++) {
-            logPool.push({ infraId: target.id, infraName: target.name });
+            logPool.push({ infraId: target.id, infraName: getInfraDisplayName(target.id, 1) });
           }
         });
 
@@ -2033,10 +2020,8 @@ function renderInfrastructureGrids() {
             const char = state.characters[charIdx];
             const infra = state.infrastructures.find(inf => inf.id === logInfo.infraId);
 
-            // Determine S1 faction for critical probability
             const charFaction = char.startClass === 'Skyborn' ? 'stability' : (char.startClass === 'Whale' ? 'revolution' : '');
-            
-            // Calculate critical rate (using current AP in loop)
+
             const baseCritRate = 0.05;
             let bonusCritRate = 0.0;
 
@@ -2090,7 +2075,7 @@ function renderInfrastructureGrids() {
 
         let totalAPSum = state.infrastructures.reduce((sum, inf) => sum + inf.ap, 0);
         alert(`1기 에버라이트 모의 시뮬레이션 데이터가 정상적으로 생성되었습니다!\n\n- 현재 상태: 1기 DAY 4\n- Roster: 스카이본 ${countSkyborn}명 vs 스카이웨일 ${countWhale}명 (인원 편중 배율: x${ratio.toFixed(2)})\n- 누적 AP: ${totalAPSum} AP (크리티컬 보너스 반영 완료)`);
-      } 
+      }
       else {
         // Season 2 Simulation
         if (!confirm("현재 데이터를 유지한 채로, 2기 에버나이트 4일차(최종일) 테스트 데이터를 추가 기입하시겠습니까?\n(캐릭터의 2기 진영 소속이 무작위 배정되며, 2기 투자 로그가 추가 생성됩니다.)")) {
@@ -2160,19 +2145,16 @@ function renderInfrastructureGrids() {
           inf.ap = s1APMap[inf.id] || 0;
         });
 
-        // 6. Simulate 2기 logs randomly (fully shuffles both target infrastructures and AP amounts!)
-        // Generate between 35 and 60 random log entries for S2
+        // 6. Simulate 2기 logs randomly
         const s2LogCount = 35 + Math.floor(Math.random() * 25);
         let s2LogCounter = 1;
         for (let idx = 1; idx <= s2LogCount; idx++) {
           const char = state.characters[Math.floor(Math.random() * state.characters.length)];
           const infra = state.infrastructures[Math.floor(Math.random() * state.infrastructures.length)];
           const baseAP = 5 + Math.floor(Math.random() * 3) * 5; // 5, 10, or 15 AP
-          
-          // Determine S2 faction for critical probability
+
           const charFaction = char.sec2Faction === 'Skyguard' ? 'stability' : (char.sec2Faction === 'Nightwalker' ? 'revolution' : '');
-          
-          // Calculate critical rate (using current AP in loop)
+
           const baseCritRate = 0.05;
           let bonusCritRate = 0.0;
 
@@ -2191,11 +2173,11 @@ function renderInfrastructureGrids() {
           state.logs.push({
             id: `log_s2_sim_` + Date.now() + `_` + s2LogCounter,
             season: 2,
-            day: Math.floor(Math.random() * 4) + 1, 
+            day: Math.floor(Math.random() * 4) + 1,
             charId: char.id,
             charName: char.name,
             infraId: infra.id,
-            infraName: infra.name,
+            infraName: getInfraDisplayName(infra, 2),
             baseAP: baseAP,
             multiplier: 1.0,
             ap: finalAP,
@@ -2227,7 +2209,7 @@ function renderInfrastructureGrids() {
 
       state.season = 2;
       state.day = 1;
-      
+
       // Safety initialize
       state.characters.forEach(char => {
         if (!char.sec2Faction) char.sec2Faction = "";
@@ -2246,7 +2228,7 @@ function renderInfrastructureGrids() {
     // Ending calculation
     function calculateFinalEnding() {
       const projection = getEndingProjection();
-      
+
       if (projection.title === "판도 분석 불가능") {
         alert("누적 데이터가 없어 결산할 수 없습니다.");
         return;
@@ -2259,7 +2241,7 @@ function renderInfrastructureGrids() {
       modalContent.innerHTML = `
         <div class="ending-title">${projection.title}</div>
         <div class="ending-desc">${projection.desc}</div>
-        
+
         <div style="margin-top: 1.5rem;">
           <h4 style="font-weight: 700; margin-bottom: 6px;">최종 정량 데이터 합산 결과</h4>
           <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.85rem;">
@@ -2280,7 +2262,6 @@ function renderInfrastructureGrids() {
       openModal('ending-modal');
     }
 
-    // Ending calculation
     function copyEndingSummary() {
       let totalStability = 0;
       let totalRevolution = 0;
@@ -2322,7 +2303,7 @@ ${desc}
 - 이념 (Ideology): ${Math.round(totalIdeology)} AP
 - 상생 (Welfare): ${Math.round(totalWelfare)} AP
 
-* 본 결산은 1기와 2기 기간 동안 러너들이 투자한 모든 행동 기록에 세력별 실시간 등록 인원수 비율 보정을 반영하여 계산된 공식 결말입니다. 
+* 본 결산은 1기와 2기 기간 동안 러너들이 투자한 모든 행동 기록에 세력별 실시간 등록 인원수 비율 보정을 반영하여 계산된 공식 결말입니다.
 티르 나 노이의 역사에 발자취를 남겨 주신 모든 러너분들께 감사드립니다.`;
 
       navigator.clipboard.writeText(summaryText)
@@ -2355,14 +2336,14 @@ ${desc}
 
       try {
         const parsed = JSON.parse(jsonText);
-        
+
         if (parsed.season === undefined || !Array.isArray(parsed.infrastructures) || !Array.isArray(parsed.characters)) {
           alert("백업 파일 구조가 맞지 않습니다.");
           return;
         }
 
         if (confirm("정말로 전달받은 백업 데이터로 덮어쓰시겠습니까?")) {
-          state = parsed;
+          state = sanitizeStateData(parsed);
           ensureConfigState();
           saveToLocalStorage();
           document.getElementById('import-json-textarea').value = '';
@@ -2476,9 +2457,9 @@ ${desc}
         const payload = snapshot.val();
         if (!payload || !payload.data) return;
         if (payload.updatedBy === getClientId()) return; // 내가 방금 쓴 값은 무시 (루프 방지)
- suppressNextPush = true;
-state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
-ensureScriptState();
+        suppressNextPush = true;
+        state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
+        ensureConfigState();
         localStorage.setItem('tirnanog_state', JSON.stringify(state));
         updateUI();
         updateSyncStatus('received');
@@ -2566,10 +2547,10 @@ ensureScriptState();
         .then(snapshot => {
           const payload = snapshot.val();
           if (payload && payload.data) {
-           if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
-  suppressNextPush = true;
-  state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
-  ensureScriptState();
+            if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
+              suppressNextPush = true;
+              state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
+              ensureConfigState();
               saveToLocalStorage();
               if (!roomRef || roomRef.key !== roomKey) connectToRoom(roomKey, { silent: true });
               alert("동기화 성공! 클라우드의 최신 판도로 대시보드가 성공적으로 동기화되었습니다.");
@@ -2606,31 +2587,32 @@ ensureScriptState();
         sessionStorage.setItem('tirnanog_welcome_shown', 'true');
       }
     };
-// ============================================================
+
+    // ============================================================
     // 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash & 강제 정렬)
     // ============================================================
     function sanitizeStateData(data) {
       if (!data) return data;
-      
+
       if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
       if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
       if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
       if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
-      
+
       // 1. 최신 INITIAL_INFRASTRUCTURES(원하는 정렬 순서)를 기준으로 새 뼈대 생성
       const newInfras = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
-      
+
       // 2. 기존 로그(logs) 또는 과거 데이터에서 AP 수치만 안전하게 추출하여 복원
       newInfras.forEach(newInfra => {
         let restoredAP = 0;
-        
+
         // 우선순위 1: 개별 투자 로그 기록을 모두 합산하여 가장 정확한 AP 도출
         data.logs.forEach(log => {
           if (log.infraId === newInfra.id) {
             restoredAP += log.ap;
           }
         });
-        
+
         // 우선순위 2: 로그가 소실된 상태라면, 과거 infrastructures 배열에 남아있던 백업 AP 구출
         if (restoredAP === 0 && data.infrastructures && Array.isArray(data.infrastructures)) {
           const oldInfra = data.infrastructures.find(old => old.id === newInfra.id);
@@ -2638,50 +2620,48 @@ ensureScriptState();
             restoredAP = oldInfra.ap;
           }
         }
-        
+
         newInfra.ap = restoredAP;
       });
-      
+
       // 3. 낡은 배열을 버리고 최신 정렬이 적용된 배열로 강제 교체
       data.infrastructures = newInfras;
       return data;
     }
 
-// ============================================================
-// 사회성향표 캡처 및 이미지 다운로드 기능 (개선 버전)
-// ============================================================
-function downloadSocialStatsAsImage() {
-  const targetPanel = document.getElementById('social-stats-panel');
+    // ============================================================
+    // 사회성향표 캡처 및 이미지 다운로드 기능
+    // ============================================================
+    function downloadSocialStatsAsImage() {
+      const targetPanel = document.getElementById('social-stats-panel');
 
-  if (!targetPanel) {
-    alert("캡처할 사회성향표 패널을 찾을 수 없습니다.");
-    return;
-  }
+      if (!targetPanel) {
+        alert("캡처할 사회성향표 패널을 찾을 수 없습니다.");
+        return;
+      }
 
-  // html2canvas 라이브러리 로드 여부 사전 체크
-  if (typeof html2canvas === 'undefined') {
-    alert("PNG 저장을 위한 html2canvas 라이브러리가 로드되지 않았습니다. HTML 파일을 확인해 주세요.");
-    return;
-  }
+      if (typeof html2canvas === 'undefined') {
+        alert("PNG 저장을 위한 html2canvas 라이브러리가 로드되지 않았습니다. HTML 파일을 확인해 주세요.");
+        return;
+      }
 
-  // 고유 ID를 부여하여 버튼을 정확히 타겟팅 (HTML 버튼에도 id="social-capture-btn" 추가 필요)
-  const captureBtn = document.getElementById('social-capture-btn') || targetPanel.querySelector('button');
-  if (captureBtn) captureBtn.style.display = 'none';
+      const captureBtn = document.getElementById('social-capture-btn') || targetPanel.querySelector('button');
+      if (captureBtn) captureBtn.style.display = 'none';
 
-  html2canvas(targetPanel, {
-    scale: 2, // 고해상도 처리
-    backgroundColor: null, 
-    logging: false
-  }).then(canvas => {
-    if (captureBtn) captureBtn.style.display = 'inline-flex';
+      html2canvas(targetPanel, {
+        scale: 2,
+        backgroundColor: null,
+        logging: false
+      }).then(canvas => {
+        if (captureBtn) captureBtn.style.display = 'inline-flex';
 
-    const link = document.createElement('a');
-    link.download = `tirnanog_social_stats_s${state.season}_d${state.day}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }).catch(err => {
-    console.error("이미지 캡처 실패:", err);
-    if (captureBtn) captureBtn.style.display = 'inline-flex';
-    alert("이미지 생성 중 오류가 발생했습니다: " + err.message);
-  });
-}
+        const link = document.createElement('a');
+        link.download = `tirnanog_social_stats_s${state.season}_d${state.day}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(err => {
+        console.error("이미지 캡처 실패:", err);
+        if (captureBtn) captureBtn.style.display = 'inline-flex';
+        alert("이미지 생성 중 오류가 발생했습니다: " + err.message);
+      });
+    }
