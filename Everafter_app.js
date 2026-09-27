@@ -2563,5 +2563,30 @@ ${desc}
         openModal('welcome-modal');
         sessionStorage.setItem('tirnanog_welcome_shown', 'true');
       }
+
+        // ============================================================
+// 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash)
+// ============================================================
+function sanitizeStateData(data) {
+  if (!data) return data;
+  
+  // 필수 배열이 누락되었을 경우 빈 배열로 강제 초기화하여 에러 방지
+  if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
+  if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
+  if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
+  if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
+  
+  // 기반시설 배열이 깨졌거나 길이가 안 맞으면, 기존 AP만 보존한 채 템플릿으로 강제 복원
+  if (!data.infrastructures || !Array.isArray(data.infrastructures) || data.infrastructures.length !== INITIAL_INFRASTRUCTURES.length) {
+    const backupAP = {};
+    if (Array.isArray(data.infrastructures)) {
+      data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
+    }
+    data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
+    data.infrastructures.forEach(i => { if (backupAP[i.id]) i.ap = backupAP[i.id]; });
+  }
+  
+  return data;
+}
     };
 
