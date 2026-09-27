@@ -2637,7 +2637,7 @@ ensureScriptState();
     }
 
 // ============================================================
-// 사회성향표 캡처 및 이미지 다운로드 기능
+// 사회성향표 캡처 및 이미지 다운로드 기능 (개선 버전)
 // ============================================================
 function downloadSocialStatsAsImage() {
   const targetPanel = document.getElementById('social-stats-panel');
@@ -2647,8 +2647,14 @@ function downloadSocialStatsAsImage() {
     return;
   }
 
-  // 캡처 중 버튼 자체는 보이지 않도록 임시 숨김 처리
-  const captureBtn = targetPanel.querySelector('button');
+  // html2canvas 라이브러리 로드 여부 사전 체크
+  if (typeof html2canvas === 'undefined') {
+    alert("PNG 저장을 위한 html2canvas 라이브러리가 로드되지 않았습니다. HTML 파일을 확인해 주세요.");
+    return;
+  }
+
+  // 고유 ID를 부여하여 버튼을 정확히 타겟팅 (HTML 버튼에도 id="social-capture-btn" 추가 필요)
+  const captureBtn = document.getElementById('social-capture-btn') || targetPanel.querySelector('button');
   if (captureBtn) captureBtn.style.display = 'none';
 
   html2canvas(targetPanel, {
@@ -2656,7 +2662,6 @@ function downloadSocialStatsAsImage() {
     backgroundColor: null, 
     logging: false
   }).then(canvas => {
-    // 캡처 완료 후 버튼 다시 표시
     if (captureBtn) captureBtn.style.display = 'inline-flex';
 
     const link = document.createElement('a');
@@ -2666,6 +2671,6 @@ function downloadSocialStatsAsImage() {
   }).catch(err => {
     console.error("이미지 캡처 실패:", err);
     if (captureBtn) captureBtn.style.display = 'inline-flex';
-    alert("이미지 생성 중 오류가 발생했습니다.");
+    alert("이미지 생성 중 오류가 발생했습니다: " + err.message);
   });
 }
