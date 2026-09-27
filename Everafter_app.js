@@ -1256,20 +1256,60 @@ const INITIAL_INFRASTRUCTURES = [
       const revIdeology = s1RevIdeology + s2RevIdeology;
       const revWelfare = s1RevWelfare + s2RevWelfare;
 
-          // Update text in legend (진영 간 비율 %)
-      const setPct = (key, s, r) => {
-        const total = s + r;
-        const sp = total > 0 ? Math.round((s / total) * 100) : 50;
-        const rp = 100 - sp; // 합계가 항상 100%가 되도록
-        document.getElementById(`val-stab-${key}`).innerText = `${Math.round(s)} (${sp.toFixed(1)}%)`;
-        document.getElementById(`val-rev-${key}`).innerText = `${Math.round(r)} (${rp.toFixed(1)}%)`;
+      // Update text in legend (진영 내 비중 % - 엔딩 판정 기준과 동일)
+      const stabTotal = stabForce + stabOrder + stabIdeology + stabWelfare;
+      const revTotal  = revForce  + revOrder  + revIdeology  + revWelfare;
+
+      const setShare = (key, s, r) => {
+      const sp = stabTotal > 0 ? (s / stabTotal) * 100 : 0;
+      const rp = revTotal  > 0 ? (r / revTotal)  * 100 : 0;
+      document.getElementById(`val-stab-${key}`).innerText = `${Math.round(s)} (${sp.toFixed(1)}%)`;
+      document.getElementById(`val-rev-${key}`).innerText  = `${Math.round(r)} (${rp.toFixed(1)}%)`;
       };
-          
-      setPct('force', stabForce, revForce);
-      setPct('order', stabOrder, revOrder);
-      setPct('ideology', stabIdeology, revIdeology);
-      setPct('welfare', stabWelfare, revWelfare);
-          
+
+        setShare('force', stabForce, revForce);
+        setShare('order', stabOrder, revOrder);
+        setShare('ideology', stabIdeology, revIdeology);
+        setShare('welfare', stabWelfare, revWelfare);
+
+                // 엔딩 경계값 근접 안내 (기준값 ±NEAR_MARGIN %p 이내일 때 표시)
+      ensureEndingConfigState();
+      const th = state.endingConfig.thresholds;
+      const NEAR_MARGIN = 2; // 안내 범위 (%p)
+      const hints = [];
+
+      const checkNear = (factionLabel, attrLabel, value, total, ratio, endingLabel) => {
+        if (total <= 0 || total < th.minInfraTotal) return; // 총합 미달이면 [정체/미완] 엔딩이 우선
+        const pct = (value / total) * 100;
+        const limit = parseFloat((ratio * 100).toFixed(1)); // 0.45*100 부동소수점 오차 방지
+        const gap = pct - limit;
+        if (Math.abs(gap) > NEAR_MARGIN) return;
+
+        let status;
+        if (gap > 0) status = `<span style="color:#dc3545;">기준 초과 (+${gap.toFixed(2)}%p) → 발동 중</span>`;
+        else if (gap === 0) status = `기준과 동일 (초과해야 발동)`;
+        else status = `기준까지 ${Math.abs(gap).toFixed(2)}%p 남음`;
+
+        hints.push(`${factionLabel} ${attrLabel} <strong>${pct.toFixed(2)}%</strong> · ${endingLabel} 기준 ${limit}% — ${status}`);
+      };
+
+      checkNear('보수', '무력', stabForce, stabTotal, th.dominantAttrRatio, '강경(무력)');
+      checkNear('보수', '규율', stabOrder, stabTotal, th.dominantAttrRatio, '강경(규율)');
+      checkNear('보수', '상생+이념', stabWelfare + stabIdeology, stabTotal, th.welfareIdeologyRatio, '명예');
+      checkNear('혁명', '무력', revForce, revTotal, th.dominantAttrRatio, '강경(무력)');
+      checkNear('혁명', '규율', revOrder, revTotal, th.dominantAttrRatio, '강경(규율)');
+      checkNear('혁명', '상생+이념', revWelfare + revIdeology, revTotal, th.welfareIdeologyRatio, '명예');
+
+      const hintEl = document.getElementById('threshold-hint');
+      if (hintEl) {
+        if (hints.length > 0) {
+          hintEl.style.display = 'block';
+          hintEl.innerHTML = `<strong style="color:#e0a82e;">⚠️ 엔딩 경계값 근접</strong><br>${hints.join('<br>')}`;
+        } else {
+          hintEl.style.display = 'none';
+          hintEl.innerHTML = '';
+        }
+      }
       // // Update text in legend
       // document.getElementById('val-stab-force').innerText = Math.round(stabForce);
       // document.getElementById('val-rev-force').innerText = Math.round(revForce);
