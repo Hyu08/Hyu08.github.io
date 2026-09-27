@@ -2635,3 +2635,37 @@ ensureScriptState();
       data.infrastructures = newInfras;
       return data;
     }
+
+// ============================================================
+// 사회성향표 캡처 및 이미지 다운로드 기능
+// ============================================================
+function downloadSocialStatsAsImage() {
+  const targetPanel = document.getElementById('social-stats-panel');
+
+  if (!targetPanel) {
+    alert("캡처할 사회성향표 패널을 찾을 수 없습니다.");
+    return;
+  }
+
+  // 캡처 중 버튼 자체는 보이지 않도록 임시 숨김 처리
+  const captureBtn = targetPanel.querySelector('button');
+  if (captureBtn) captureBtn.style.display = 'none';
+
+  html2canvas(targetPanel, {
+    scale: 2, // 고해상도 처리
+    backgroundColor: null, 
+    logging: false
+  }).then(canvas => {
+    // 캡처 완료 후 버튼 다시 표시
+    if (captureBtn) captureBtn.style.display = 'inline-flex';
+
+    const link = document.createElement('a');
+    link.download = `tirnanog_social_stats_s${state.season}_d${state.day}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }).catch(err => {
+    console.error("이미지 캡처 실패:", err);
+    if (captureBtn) captureBtn.style.display = 'inline-flex';
+    alert("이미지 생성 중 오류가 발생했습니다.");
+  });
+}
