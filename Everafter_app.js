@@ -1,4 +1,4 @@
-    const INITIAL_INFRASTRUCTURES = [
+  const INITIAL_INFRASTRUCTURES = [
       // Skyborn (Stability)
       { id: 'memorial', name: '창립자 기념관 (Founders Memorial)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
       { id: 'academy', name: '사관학교 (Officer Academy)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본의 미래 지휘관 생도들을 양성하는 군사 교육기관. 반복되는 훈련과 기강을 상징합니다.' },
@@ -13,7 +13,7 @@
       { id: 'union', name: '광산 노조 (Miners Union)', faction: 'revolution', attribute: 'order', ap: 0, desc: '스카이웨일 광산 노동자들의 권익과 안전, 자치 단결력을 대변하는 핵심 공동체.' },
       { id: 'school', name: '웨일 학교 (Whale School)', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
       { id: 'community', name: '주민회관 (Community Center)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관.' },
-      { id: 'workshop', name: '증기 공방 (Steam Workshop)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' },
+      { id: 'workshop', name: '증기 공방 (Steam Workshop)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' }
     ];
 
     const EVENT_TEMPLATES = [
@@ -2585,27 +2585,42 @@ ensureScriptState();
       }
     };
 // ============================================================
-    // 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash)
+    // 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash & 강제 정렬)
     // ============================================================
-    // 👈 이제 전역 스코프에 위치하므로 다른 함수들에서도 정상적으로 호출 가능합니다.
     function sanitizeStateData(data) {
       if (!data) return data;
       
-      // 필수 배열이 누락되었을 경우 빈 배열로 강제 초기화하여 에러 방지
       if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
       if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
       if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
       if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
       
-      // 기반시설 배열이 깨졌거나 길이가 안 맞으면, 기존 AP만 보존한 채 템플릿으로 강제 복원
-      if (!data.infrastructures || !Array.isArray(data.infrastructures) || data.infrastructures.length !== INITIAL_INFRASTRUCTURES.length) {
-        const backupAP = {};
-        if (Array.isArray(data.infrastructures)) {
-          data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
-        }
-        data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
-        data.infrastructures.forEach(i => { if (backupAP[i.id]) i.ap = backupAP[i.id]; });
-      }
+      // 1. 최신 INITIAL_INFRASTRUCTURES(원하는 정렬 순서)를 기준으로 새 뼈대 생성
+      const newInfras = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
       
+      // 2. 기존 로그(logs) 또는 과거 데이터에서 AP 수치만 안전하게 추출하여 복원
+      newInfras.forEach(newInfra => {
+        let restoredAP = 0;
+        
+        // 우선순위 1: 개별 투자 로그 기록을 모두 합산하여 가장 정확한 AP 도출
+        data.logs.forEach(log => {
+          if (log.infraId === newInfra.id) {
+            restoredAP += log.ap;
+          }
+        });
+        
+        // 우선순위 2: 로그가 소실된 상태라면, 과거 infrastructures 배열에 남아있던 백업 AP 구출
+        if (restoredAP === 0 && data.infrastructures && Array.isArray(data.infrastructures)) {
+          const oldInfra = data.infrastructures.find(old => old.id === newInfra.id);
+          if (oldInfra && oldInfra.ap) {
+            restoredAP = oldInfra.ap;
+          }
+        }
+        
+        newInfra.ap = restoredAP;
+      });
+      
+      // 3. 낡은 배열을 버리고 최신 정렬이 적용된 배열로 강제 교체
+      data.infrastructures = newInfras;
       return data;
     }
