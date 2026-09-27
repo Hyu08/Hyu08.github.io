@@ -524,34 +524,20 @@
     }
      
 
- function sanitizeStateData(data) {
-      if (!data) return data;
-      
-      // 필수 배열 누락 방지
-      if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
-      if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
-      if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
-      if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
-      
-      // 기존에 저장된 AP 기록 백업
-      const backupAP = {};
-      if (data.infrastructures && Array.isArray(data.infrastructures)) {
-        data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
-      }
-      
-      // 무조건 코드 상단의 INITIAL_INFRASTRUCTURES 순서와 정보를 기반으로 새로 생성
-      data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
-      
-      // 백업해둔 AP만 해당 id에 맞게 복원
-      data.infrastructures.forEach(i => { 
-        if (backupAP[i.id] !== undefined) {
-          i.ap = backupAP[i.id]; 
-        }
-      });
-      
-      return data;
+ 
+function loadFromLocalStorage() {
+  const savedData = localStorage.getItem('tirnanog_state');
+  if (savedData) {
+    try {
+      const parsedData = JSON.parse(savedData);
+      // 데이터 로드 시 무결성 검증 및 기본값 보정을 즉각 수행
+      state = sanitizeStateData(parsedData);
+      ensureConfigState(); 
+    } catch (e) {
+      console.error("[Everafter] 로컬 스토리지 데이터 파싱 오류:", e);
     }
-
+  }
+}
     function saveToLocalStorage() {
       localStorage.setItem('tirnanog_state', JSON.stringify(state));
       updateUI();
