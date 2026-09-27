@@ -1370,22 +1370,34 @@
       return attr;
     }
 
-    function renderInfrastructureGrids() {
+   function renderInfrastructureGrids() {
       const skybornGrid = document.getElementById('skyborn-grid');
       const whaleGrid = document.getElementById('whale-grid');
+      
+      if (!skybornGrid || !whaleGrid) return;
       
       skybornGrid.innerHTML = '';
       whaleGrid.innerHTML = '';
 
-      // Determine dynamic max threshold for gauge rendering
       const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
       const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
 
       state.infrastructures.forEach(infra => {
-        const { multiplier, blocked } = getAPModifier(infra.id);
+        const mods = getAPModifier(infra.id);
+        const multiplier = mods.multiplier;
+        const blocked = mods.blocked;
         const currentAP = getDisplayAP(infra.id);
         const effectiveAP = getEffectiveAP(infra.id);
         const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
+        
+        // [버그 픽스] HTML 템플릿 내부 파싱 충돌을 방지하기 위해, 상태별 CSS와 속성을 사전에 분리하여 정의
+        const actionStyle = isEditMode 
+          ? "opacity: 1.0; pointer-events: auto; border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);" 
+          : "opacity: 0.45; pointer-events: none;";
+        
+        const btnState = isEditMode ? "" : "disabled";
+        const inputState = isEditMode ? "" : "readonly";
+
         const cardHTML = `
           <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
             <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
@@ -1404,15 +1416,15 @@
                 </div>
                 <div class="infra-stats-row">
                   <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
-                  <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상'}</span>
+                  <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : (multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상')}</span>
                 </div>
               </div>
-              <div class="infra-actions" style="opacity: ${isEditMode ? '1.0' : '0.45'}; pointer-events: ${isEditMode ? 'auto' : 'none'}; ${isEditMode ? 'border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);' : ''}">
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${isEditMode ? '' : 'disabled'}>-1</button>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${isEditMode ? '' : 'disabled'}>-5</button>
-                <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${isEditMode ? '' : 'readonly'}>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${isEditMode ? '' : 'disabled'}>+1</button>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${isEditMode ? '' : 'disabled'}>+5</button>
+              <div class="infra-actions" style="${actionStyle}">
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${btnState}>-1</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${btnState}>-5</button>
+                <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${inputState}>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${btnState}>+1</button>
+                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${btnState}>+5</button>
               </div>
             </div>
           </div>
