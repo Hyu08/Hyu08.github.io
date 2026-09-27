@@ -1261,10 +1261,10 @@ const INITIAL_INFRASTRUCTURES = [
         const total = s + r;
         const sp = total > 0 ? Math.round((s / total) * 100) : 50;
         const rp = 100 - sp; // 합계가 항상 100%가 되도록
-        document.getElementById(`val-stab-${key}`).innerText = sp + '%';
-        document.getElementById(`val-rev-${key}`).innerText = rp + '%';
+        document.getElementById(`val-stab-${key}`).innerText = `${Math.round(s)} (${sp.toFixed(1)}%)`;
+        document.getElementById(`val-rev-${key}`).innerText = `${Math.round(r)} (${rp.toFixed(1)}%)`;
       };
-
+          
       setPct('force', stabForce, revForce);
       setPct('order', stabOrder, revOrder);
       setPct('ideology', stabIdeology, revIdeology);
