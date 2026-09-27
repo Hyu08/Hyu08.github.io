@@ -2430,9 +2430,9 @@ ${desc}
         const payload = snapshot.val();
         if (!payload || !payload.data) return;
         if (payload.updatedBy === getClientId()) return; // 내가 방금 쓴 값은 무시 (루프 방지)
-        suppressNextPush = true;
-        state = payload.data;
-        ensureConfigState();
+ suppressNextPush = true;
+state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
+ensureScriptState();
         localStorage.setItem('tirnanog_state', JSON.stringify(state));
         updateUI();
         updateSyncStatus('received');
@@ -2520,10 +2520,10 @@ ${desc}
         .then(snapshot => {
           const payload = snapshot.val();
           if (payload && payload.data) {
-            if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
-              suppressNextPush = true;
-              state = payload.data;
-              ensureConfigState();
+           if (confirm("클라우드에서 최신 데이터를 불러와 현재 대시보드를 덮어쓰시겠습니까?")) {
+  suppressNextPush = true;
+  state = sanitizeStateData(payload.data); // 무결성 검증 통과 후 덮어쓰기
+  ensureScriptState();
               saveToLocalStorage();
               if (!roomRef || roomRef.key !== roomKey) connectToRoom(roomKey, { silent: true });
               alert("동기화 성공! 클라우드의 최신 판도로 대시보드가 성공적으로 동기화되었습니다.");
