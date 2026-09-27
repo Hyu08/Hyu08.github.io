@@ -1256,18 +1256,32 @@ const INITIAL_INFRASTRUCTURES = [
       const revIdeology = s1RevIdeology + s2RevIdeology;
       const revWelfare = s1RevWelfare + s2RevWelfare;
 
-      // Update text in legend
-      document.getElementById('val-stab-force').innerText = Math.round(stabForce);
-      document.getElementById('val-rev-force').innerText = Math.round(revForce);
+          // Update text in legend (진영 간 비율 %)
+      const setPct = (key, s, r) => {
+        const total = s + r;
+        const sp = total > 0 ? Math.round((s / total) * 100) : 50;
+        const rp = 100 - sp; // 합계가 항상 100%가 되도록
+        document.getElementById(`val-stab-${key}`).innerText = sp + '%';
+        document.getElementById(`val-rev-${key}`).innerText = rp + '%';
+      };
 
-      document.getElementById('val-stab-order').innerText = Math.round(stabOrder);
-      document.getElementById('val-rev-order').innerText = Math.round(revOrder);
+      setPct('force', stabForce, revForce);
+      setPct('order', stabOrder, revOrder);
+      setPct('ideology', stabIdeology, revIdeology);
+      setPct('welfare', stabWelfare, revWelfare);
+          
+      // // Update text in legend
+      // document.getElementById('val-stab-force').innerText = Math.round(stabForce);
+      // document.getElementById('val-rev-force').innerText = Math.round(revForce);
 
-      document.getElementById('val-stab-ideology').innerText = Math.round(stabIdeology);
-      document.getElementById('val-rev-ideology').innerText = Math.round(revIdeology);
+      // document.getElementById('val-stab-order').innerText = Math.round(stabOrder);
+      // document.getElementById('val-rev-order').innerText = Math.round(revOrder);
 
-      document.getElementById('val-stab-welfare').innerText = Math.round(stabWelfare);
-      document.getElementById('val-rev-welfare').innerText = Math.round(revWelfare);
+      // document.getElementById('val-stab-ideology').innerText = Math.round(stabIdeology);
+      // document.getElementById('val-rev-ideology').innerText = Math.round(revIdeology);
+
+      // document.getElementById('val-stab-welfare').innerText = Math.round(stabWelfare);
+      // document.getElementById('val-rev-welfare').innerText = Math.round(revWelfare);
 
       // Radar graph math
       const maxAttr = Math.max(
