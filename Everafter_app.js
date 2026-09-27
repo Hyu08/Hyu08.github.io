@@ -123,7 +123,24 @@
         document.getElementById("evt-multiplier").disabled = false;
       }
     }
-
+    function saveToLocalStorage() {
+      localStorage.setItem('tirnanog_state', JSON.stringify(state));
+      updateUI();
+      pushToRealtime();
+    }
+// 로컬 스토리지에서 데이터를 불러오는 함수
+function loadFromLocalStorage() {
+  const savedData = localStorage.getItem('tirnanog_state');
+  if (savedData) {
+    try {
+      const parsedData = JSON.parse(savedData);
+      state = sanitizeStateData(parsedData);
+      ensureConfigState();
+    } catch (e) {
+      console.error("[Everafter] 로컬 스토리지 데이터 파싱 오류:", e);
+    }
+  }
+}
     function createNewEvent(e) {
       e.preventDefault();
       const name = document.getElementById("evt-name").value.trim();
@@ -538,11 +555,7 @@ function loadFromLocalStorage() {
     }
   }
 }
-    function saveToLocalStorage() {
-      localStorage.setItem('tirnanog_state', JSON.stringify(state));
-      updateUI();
-      pushToRealtime();
-    }
+
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
