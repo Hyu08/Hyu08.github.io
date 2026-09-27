@@ -521,11 +521,7 @@
       const saved = localStorage.getItem('tirnanog_state');
       if (saved) {
         try {
-          state = JSON.parse(saved);
-          if (!state.infrastructures || state.infrastructures.length !== INITIAL_INFRASTRUCTURES.length) {
-            state.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
-          }
-          if (!state.customEvents) state.customEvents = [];
+     state = sanitizeStateData(JSON.parse(saved));
           ensureConfigState();
         } catch (e) {
           console.error("LocalStorage load error: ", e);
