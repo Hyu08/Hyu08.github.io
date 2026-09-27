@@ -524,22 +524,32 @@
     }
      
 
-    function loadFromLocalStorage() {
-      const saved = localStorage.getItem('tirnanog_state');
-      if (saved) {
-        try {
-     state = sanitizeStateData(JSON.parse(saved));
-          ensureConfigState();
-        } catch (e) {
-          console.error("LocalStorage load error: ", e);
+ function sanitizeStateData(data) {
+      if (!data) return data;
+      
+      // 필수 배열 누락 방지
+      if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
+      if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
+      if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
+      if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
+      
+      // 기존에 저장된 AP 기록 백업
+      const backupAP = {};
+      if (data.infrastructures && Array.isArray(data.infrastructures)) {
+        data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
+      }
+      
+      // 무조건 코드 상단의 INITIAL_INFRASTRUCTURES 순서와 정보를 기반으로 새로 생성
+      data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
+      
+      // 백업해둔 AP만 해당 id에 맞게 복원
+      data.infrastructures.forEach(i => { 
+        if (backupAP[i.id] !== undefined) {
+          i.ap = backupAP[i.id]; 
         }
-      } else {
-        ensureConfigState();
-      }
-      const savedRoomKey = localStorage.getItem('tirnanog_cloud_key');
-      if (savedRoomKey) {
-        document.getElementById('cloud-room-input').value = savedRoomKey;
-      }
+      });
+      
+      return data;
     }
 
     function saveToLocalStorage() {
