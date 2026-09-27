@@ -465,8 +465,12 @@
     }
 
     function getDisplayAP(infraId) {
+      const infra = state.infrastructures.find(i => i.id === infraId);
+      if (!infra) return 0;
+
       let sum = 0;
-      state.logs.forEach(log => {
+      // || [] 를 추가하여 로그가 없어도 뻗지 않음
+      (state.logs || []).forEach(log => {
         if (state.season === 1) {
           if (log.season === 1 && log.day <= state.day) {
             if (log.infraId === infraId) sum += log.ap;
@@ -479,16 +483,19 @@
           }
         }
       });
-      return sum;
+      
+      // [요청 사항 반영] 로그가 날아가서 합산이 안 되더라도, 기반시설 자체의 AP가 존재한다면 무조건 가져옴
+      return sum > 0 ? sum : infra.ap;
     }
 
     function getEffectiveAP(infraId) {
       const infra = state.infrastructures.find(i => i.id === infraId);
       if (!infra) return 0;
 
-      // 1. Season 1 raw AP
       let s1Raw = 0;
-      state.logs.forEach(log => {
+      let s2Raw = 0;
+
+      (state.logs || []).forEach(log => {
         if (log.infraId === infraId && log.season === 1) {
           if (state.season === 1) {
             if (log.day <= state.day) s1Raw += log.ap;
@@ -496,26 +503,26 @@
             s1Raw += log.ap;
           }
         }
+        if (state.season === 2 && log.infraId === infraId && log.season === 2 && log.day <= state.day) {
+          s2Raw += log.ap;
+        }
       });
-      const s1Mult = infra.faction === 'stability' ? s1StabMult : s1RevMult;
-      const s1Effective = s1Raw * s1Mult;
 
-      // 2. Season 2 raw AP
-      let s2Raw = 0;
-      if (state.season === 2) {
-        state.logs.forEach(log => {
-          if (log.infraId === infraId && log.season === 2 && log.day <= state.day) {
-            s2Raw += log.ap;
-          }
-        });
+      // 캐릭터가 0명이어도 기본 배율 1.0 보장
+      const s1Mult = infra.faction === 'stability' ? (typeof s1StabMult !== 'undefined' ? s1StabMult : 1.0) : (typeof s1RevMult !== 'undefined' ? s1RevMult : 1.0);
+      const s2Mult = infra.faction === 'stability' ? (typeof s2StabMult !== 'undefined' ? s2StabMult : 1.0) : (typeof s2RevMult !== 'undefined' ? s2RevMult : 1.0);
+
+      const totalEffective = (s1Raw * s1Mult) + (s2Raw * s2Mult);
+
+      // [요청 사항 반영] 로그 합산이 0이어도 기반시설 AP가 있다면, 캐릭터 유무와 무관하게 강제 보정 연산 후 출력
+      if (totalEffective === 0 && infra.ap > 0) {
+        const fallbackMult = state.season === 1 ? s1Mult : s2Mult;
+        return infra.ap * fallbackMult;
       }
-      const s2Mult = infra.faction === 'stability' ? s2StabMult : s2RevMult;
-      const s2Effective = s2Raw * s2Mult;
 
-      return s1Effective + s2Effective;
+      return totalEffective;
     }
-
-
+     
 
     function loadFromLocalStorage() {
       const saved = localStorage.getItem('tirnanog_state');
@@ -1020,6 +1027,13 @@
     }
 
     function updateUI() {
+      // --- 데이터 누락 시 빈 배열로 강제 치환 (forEach 뻗음 원천 차단) ---
+      if (!state.characters) state.characters = [];
+      if (!state.logs) state.logs = [];
+      if (!state.activeEvents) state.activeEvents = [];
+      if (!state.infrastructures) state.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
+      // -------------------------------------------------------------
+
       document.body.setAttribute('data-season', state.season);
       
       const badgeText = state.season === 1 ? '1기 에버라이트' : '2기 에버나이트';
@@ -2559,30 +2573,29 @@ ensureScriptState();
         openModal('welcome-modal');
         sessionStorage.setItem('tirnanog_welcome_shown', 'true');
       }
-
-        // ============================================================
-// 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash)
-// ============================================================
-function sanitizeStateData(data) {
-  if (!data) return data;
-  
-  // 필수 배열이 누락되었을 경우 빈 배열로 강제 초기화하여 에러 방지
-  if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
-  if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
-  if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
-  if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
-  
-  // 기반시설 배열이 깨졌거나 길이가 안 맞으면, 기존 AP만 보존한 채 템플릿으로 강제 복원
-  if (!data.infrastructures || !Array.isArray(data.infrastructures) || data.infrastructures.length !== INITIAL_INFRASTRUCTURES.length) {
-    const backupAP = {};
-    if (Array.isArray(data.infrastructures)) {
-      data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
-    }
-    data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
-    data.infrastructures.forEach(i => { if (backupAP[i.id]) i.ap = backupAP[i.id]; });
-  }
-  
-  return data;
-}
     };
-
+// ============================================================
+    // 외부 데이터 무결성 검증 및 손상 복구 (Anti-Crash)
+    // ============================================================
+    // 👈 이제 전역 스코프에 위치하므로 다른 함수들에서도 정상적으로 호출 가능합니다.
+    function sanitizeStateData(data) {
+      if (!data) return data;
+      
+      // 필수 배열이 누락되었을 경우 빈 배열로 강제 초기화하여 에러 방지
+      if (!data.logs || !Array.isArray(data.logs)) data.logs = [];
+      if (!data.characters || !Array.isArray(data.characters)) data.characters = [];
+      if (!data.activeEvents || !Array.isArray(data.activeEvents)) data.activeEvents = [];
+      if (!data.customEvents || !Array.isArray(data.customEvents)) data.customEvents = [];
+      
+      // 기반시설 배열이 깨졌거나 길이가 안 맞으면, 기존 AP만 보존한 채 템플릿으로 강제 복원
+      if (!data.infrastructures || !Array.isArray(data.infrastructures) || data.infrastructures.length !== INITIAL_INFRASTRUCTURES.length) {
+        const backupAP = {};
+        if (Array.isArray(data.infrastructures)) {
+          data.infrastructures.forEach(i => { if (i && i.id) backupAP[i.id] = i.ap || 0; });
+        }
+        data.infrastructures = JSON.parse(JSON.stringify(INITIAL_INFRASTRUCTURES));
+        data.infrastructures.forEach(i => { if (backupAP[i.id]) i.ap = backupAP[i.id]; });
+      }
+      
+      return data;
+    }
