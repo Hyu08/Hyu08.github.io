@@ -1,20 +1,47 @@
-  const INITIAL_INFRASTRUCTURES = [
+ const INITIAL_INFRASTRUCTURES = [
+
       // Skyborn (Stability)
-      { id: 'memorial', name: '창립자 기념관/국가재건기념관', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
-      { id: 'academy', name: '사관학교/국가사관학교', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본의 미래 지휘관 생도들을 양성하는 군사 교육기관. 반복되는 훈련과 기강을 상징합니다.' },
-      { id: 'society', name: '법학회/법률원', faction: 'stability', attribute: 'ideology', ap: 0, desc: '새로운 법률 해석과 정의, 법전을 수호하고 판례를 연구하는 법조 연구 학회.' },
-      { id: 'guard', name: '근위사령부/스카이가드 사령부', faction: 'stability', attribute: 'force', ap: 0, desc: '티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징.' },
-      { id: 'admin', name: '행정청/국가행정청', faction: 'stability', attribute: 'welfare', ap: 0, desc: '기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다.' },
-      { id: 'nobles', name: '귀족원/국가평의회', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
-      
+      { id: 'memorial', name: '창립자 기념관 (Founders Memorial)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '건국 조상들과 다난 독립의 신성한 역사를 기리는 곳. 체제 정통성을 고취합니다.' },
+      { id: 'academy', name: '사관학교 (Officer Academy)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본의 미래 지휘관 생도들을 양성하는 군사 교육기관. 반복되는 훈련과 기강을 상징합니다.' },
+      { id: 'society', name: '법학회 (Law Society)', faction: 'stability', attribute: 'ideology', ap: 0, desc: '새로운 법률 해석과 정의, 법전을 수호하고 판례를 연구하는 법조 연구 학회.' },
+      { id: 'guard', name: '근위사령부 (Guard Command)', faction: 'stability', attribute: 'force', ap: 0, desc: '티르 나 노이 치안 유지 및 방공 함대를 지휘하는 핵심 군사 기구. 무력 통제력의 상징.' },
+      { id: 'admin', name: '행정청 (Administration)', faction: 'stability', attribute: 'welfare', ap: 0, desc: '기본 공공서비스 및 계획경제를 감독하는 최고 행정 기구. 민생 행정력을 나타냅니다.' },
+      { id: 'nobles', name: '귀족원 (House of Nobles)', faction: 'stability', attribute: 'order', ap: 0, desc: '스카이본 귀족으로 구성된 상원 의회. 전통 체제 통치력과 지배 규율을 의미합니다.' },
+   
       // Whale (Revolution)
-      { id: 'port', name: '아발론 항만/아발론 자유항', faction: 'revolution', attribute: 'force', ap: 0, desc: '스카이웨일 선착장과 대규모 물류선, 무역 비공정이 입항하고 무장 투쟁력을 결집하는 항구.' },
-      { id: 'crews', name: '청년 선원단/나이트워커 행동단', faction: 'revolution', attribute: 'force', ap: 0, desc: '도전적인 비공정 항로 개척과 지상 탐색을 수행하는 젊은 선원들의 활기차고 강력한 물리 행동 단체.' },
-      { id: 'union', name: '광산 노조/노동자 연맹', faction: 'revolution', attribute: 'order', ap: 0, desc: '스카이웨일 광산 노동자들의 권익과 안전, 자치 단결력을 대변하는 핵심 공동체.' },
-      { id: 'school', name: '웨일 학교/시민교육원', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
-      { id: 'community', name: '주민회관/공동체회관', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관.' },
-      { id: 'workshop', name: '증기 공방/독립 공방', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' }
-    ];
+      { id: 'port', name: '아발론 항만 (Avalon Port)', faction: 'revolution', attribute: 'force', ap: 0, desc: '스카이웨일 선착장과 대규모 물류선, 무역 비공정이 입항하고 무장 투쟁력을 결집하는 항구.' },
+      { id: 'crews', name: '청년 선원단 (Youth Sailors)', faction: 'revolution', attribute: 'force', ap: 0, desc: '도전적인 비공정 항로 개척과 지상 탐색을 수행하는 젊은 선원들의 활기차고 강력한 물리 행동 단체.' },
+      { id: 'union', name: '광산 노조 (Miners Union)', faction: 'revolution', attribute: 'order', ap: 0, desc: '스카이웨일 광산 노동자들의 권익과 안전, 자치 단결력을 대변하는 핵심 공동체.' },
+      { id: 'school', name: '웨일 학교 (Whale School)', faction: 'revolution', attribute: 'ideology', ap: 0, desc: '솔라스의 노동층 계층 자제들을 위한 실업·기술 학교. 지식을 통해 의식이 성장합니다.' },
+      { id: 'community', name: '주민회관 (Community Center)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 계층이 모여 정보를 공유하고구호 활동을 조율하는 상생 생활관.' },
+      { id: 'workshop', name: '증기 공방 (Steam Workshop)', faction: 'revolution', attribute: 'welfare', ap: 0, desc: '웨일 기술자들이 스팀 및 최신 기계 설비를 연구하고 정비하는 자립 기계공학 기지.' }
+ // 시설별 시즌 1 / 시즌 2 명칭 매핑
+const INFRA_NAMES_BY_SEASON = {
+  memorial:  { 1: '창립자 기념관', 2: '국가재건기념관' },
+  academy:   { 1: '사관학교',     2: '국가사관학교' },
+  society:   { 1: '법학회',       2: '법률원' },
+  guard:     { 1: '근위사령부',   2: '스카이가드 사령부' },
+  admin:     { 1: '행정청',       2: '국가행정청' },
+  nobles:    { 1: '귀족원',       2: '국가평의회' },
+  port:      { 1: '아발론 항만',  2: '아발론 자유항' },
+  crews:     { 1: '청년 선원단',  2: '나이트워커 행동단' },
+  union:     { 1: '광산 노조',    2: '노동자 연맹' },
+  school:    { 1: '웨일 학교',    2: '시민교육원' },
+  community: { 1: '주민회관',     2: '공동체회관' },
+  workshop:  { 1: '증기 공방',    2: '독립 공방' }
+};
+
+// 시즌에 맞는 시설명 반환 (season 생략 시 현재 시즌 기준)
+function getInfraDisplayName(infraOrId, season) {
+  const infra = typeof infraOrId === 'string'
+    ? state.infrastructures.find(i => i.id === infraOrId)
+    : infraOrId;
+  if (!infra) return typeof infraOrId === 'string' ? infraOrId : '';
+  const s = season || state.season;
+  const map = INFRA_NAMES_BY_SEASON[infra.id];
+  return (map && map[s]) || infra.name;
+}   
+ ];
 
     const EVENT_TEMPLATES = [
       { id: 'festival', name: '[임시] 건국 기념제 (200주년)', season: 1, type: 'multiply', target: ['nobles', 'memorial'], multiplier: 1.5, desc: '창립자 기념관 및 귀족원 투자 효율 1.5배 상승' },
@@ -542,18 +569,7 @@ function loadFromLocalStorage() {
      
 
  
-function loadFromLocalStorage() {
-  const savedData = localStorage.getItem('tirnanog_state');
-  if (savedData) {
-    try {
-      const parsedData = JSON.parse(savedData);
-      // 데이터 로드 시 무결성 검증 및 기본값 보정을 즉각 수행
-      state = sanitizeStateData(parsedData);
-      ensureConfigState(); 
-    } catch (e) {
-      console.error("[Everafter] 로컬 스토리지 데이터 파싱 오류:", e);
-    }
-  }
+
 }
 
 
@@ -1369,75 +1385,70 @@ function loadFromLocalStorage() {
       return attr;
     }
 
-   function renderInfrastructureGrids() {
-      const skybornGrid = document.getElementById('skyborn-grid');
-      const whaleGrid = document.getElementById('whale-grid');
-      
-      if (!skybornGrid || !whaleGrid) return;
-      
-      skybornGrid.innerHTML = '';
-      whaleGrid.innerHTML = '';
+function renderInfrastructureGrids() {
+  const skybornGrid = document.getElementById('skyborn-grid');
+  const whaleGrid = document.getElementById('whale-grid');
+  if (!skybornGrid || !whaleGrid) return;   // 맨 위로 이동
 
-      const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
-      const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
+  skybornGrid.innerHTML = '';
+  whaleGrid.innerHTML = '';
 
-      state.infrastructures.forEach(infra => {
-        const mods = getAPModifier(infra.id);
-        const multiplier = mods.multiplier;
-        const blocked = mods.blocked;
-        const currentAP = getDisplayAP(infra.id);
-        const effectiveAP = getEffectiveAP(infra.id);
-        const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
-        
-        // [버그 픽스] HTML 템플릿 내부 파싱 충돌을 방지하기 위해, 상태별 CSS와 속성을 사전에 분리하여 정의
-        const actionStyle = isEditMode 
-          ? "opacity: 1.0; pointer-events: auto; border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);" 
-          : "opacity: 0.45; pointer-events: none;";
-        
-        const btnState = isEditMode ? "" : "disabled";
-        const inputState = isEditMode ? "" : "readonly";
+  const maxInvested = state.infrastructures.reduce((max, i) => Math.max(max, getEffectiveAP(i.id)), 0);
+  const maxThreshold = Math.max(100, Math.ceil(maxInvested / 50) * 50);
 
-        const cardHTML = `
-          <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
-            <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
-            <div>
-              <div class="infra-header">
-                <i class="${getInfraIcon(infra.id)}"></i>
-                <span class="infra-title">${infra.name}</span>
-              </div>
-              <div class="infra-desc">${infra.desc}</div>
+  state.infrastructures.forEach(infra => {
+    const displayName = getInfraDisplayName(infra);   // 카드 생성 전에 계산
+    const mods = getAPModifier(infra.id);
+    const multiplier = mods.multiplier;
+    const blocked = mods.blocked;
+    const currentAP = getDisplayAP(infra.id);
+    const effectiveAP = getEffectiveAP(infra.id);
+    const fillPercent = Math.min((effectiveAP / maxThreshold) * 100, 100);
+
+    const actionStyle = isEditMode
+      ? "opacity: 1.0; pointer-events: auto; border: 1px solid var(--danger-color); padding: 4px; border-radius: 6px; background: rgba(169, 68, 66, 0.04);"
+      : "opacity: 0.45; pointer-events: none;";
+    const btnState = isEditMode ? "" : "disabled";
+    const inputState = isEditMode ? "" : "readonly";
+
+    const cardHTML = `
+      <div class="infra-card ${infra.faction} ${blocked ? 'blocked' : ''}">
+        <div class="infra-tag ${infra.faction}">${getKoreanAttribute(infra.attribute)}</div>
+        <div>
+          <div class="infra-header">
+            <i class="${getInfraIcon(infra.id)}"></i>
+            <span class="infra-title">${displayName}</span>
+          </div>
+          <div class="infra-desc">${infra.desc}</div>
+        </div>
+        <div>
+          <div class="infra-progress-container">
+            <div class="infra-progress-bar">
+              <div class="infra-progress-fill" style="width: ${fillPercent}%;"></div>
             </div>
-            
-            <div>
-              <div class="infra-progress-container">
-                <div class="infra-progress-bar">
-                  <div class="infra-progress-fill" style="width: ${fillPercent}%;"></div>
-                </div>
-                <div class="infra-stats-row">
-                  <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
-                  <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : (multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상')}</span>
-                </div>
-              </div>
-              <div class="infra-actions" style="${actionStyle}">
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${btnState}>-1</button>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${btnState}>-5</button>
-                <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${inputState}>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${btnState}>+1</button>
-                <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${btnState}>+5</button>
-              </div>
+            <div class="infra-stats-row">
+              <span>누적: <strong>${currentAP} AP</strong>${Math.round(effectiveAP) !== currentAP ? ` <span style="color: var(--primary-color); font-weight:700;">(보정: ${Math.round(effectiveAP)})</span>` : ''} <span style="color: var(--text-muted); font-size: 0.72rem;">/ ${maxThreshold} AP</span></span>
+              <span>${blocked ? '<strong style="color: var(--danger-color);"><i class="fa-solid fa-lock"></i> 봉쇄됨</strong>' : (multiplier !== 1.0 ? `<strong style="color: var(--primary-color);">배율 x${multiplier}</strong>` : '상태 정상')}</span>
             </div>
           </div>
-        `;
+          <div class="infra-actions" style="${actionStyle}">
+            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -1)" ${btnState}>-1</button>
+            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', -5)" ${btnState}>-5</button>
+            <input type="number" class="form-control" style="flex-grow:1; height: 26px; padding: 0 4px; text-align:center;" value="${currentAP}" onchange="directSetAP('${infra.id}', this.value)" ${inputState}>
+            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 1)" ${btnState}>+1</button>
+            <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="quickAdjustAP('${infra.id}', 5)" ${btnState}>+5</button>
+          </div>
+        </div>
+      </div>
+    `;
 
-        if (infra.faction === 'stability') {
-          skybornGrid.innerHTML += cardHTML;
-        } else {
-          whaleGrid.innerHTML += cardHTML;
-        }
-      });
+    if (infra.faction === 'stability') {
+      skybornGrid.innerHTML += cardHTML;
+    } else {
+      whaleGrid.innerHTML += cardHTML;
     }
-
-
+  });
+}
 
 
     function getInfraIcon(id) {
