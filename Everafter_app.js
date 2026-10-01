@@ -2725,8 +2725,11 @@ ${desc}
       if (captureBtn) captureBtn.style.display = 'none';
 
       const originalBg = targetPanel.style.backgroundColor;
-      targetPanel.style.backgroundColor = 'transparent';
+      const originalColor = targetPanel.style.color;
 
+      targetPanel.style.backgroundColor = 'rgba(28, 36, 51, 0.9)'; 
+      targetPanel.style.color = '#ffffff';
+          
       html2canvas(targetPanel, {
         scale: 2,
         backgroundColor: 'rgba(28, 36, 51, 0.9)',
