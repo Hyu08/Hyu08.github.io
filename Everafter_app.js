@@ -330,9 +330,23 @@ const INITIAL_INFRASTRUCTURES = [
       const diff = Math.abs(totalStability - totalRevolution);
       const marginPercent = (diff / totalAP) * 100;
 
+      // 공통 분기용: 전체 AP 대비 무력/이념 비중
+      const forceShare = totalForce / totalAP;
+      const ideologyShare = totalIdeology / totalAP;
+      const isLongWar = forceShare > th.longtermwar;
+      const isAgeIde  = ideologyShare > th.ageofide;
+
       let id;
       if (marginPercent < th.deadlockMarginPercent) {
         id = 'deadlock';
+      }
+      else if (isLongWar || isAgeIde) {
+        if (isLongWar && isAgeIde) {
+          // 둘 다 기준을 넘으면 더 크게 초과한 쪽 우선
+          id = (forceShare - th.longtermwar) >= (ideologyShare - th.ageofide) ? 'long_war' : 'age_ide';
+        } else {
+          id = isLongWar ? 'long_war' : 'age_ide';
+        }
       }
       else if (totalStability > totalRevolution) {
         const sForce = getEffectiveAP("guard");
@@ -721,8 +735,9 @@ const INITIAL_INFRASTRUCTURES = [
     // 엔딩 분기점(임계값) 및 엔딩 스크립트 관리 (Ending Branch Manager)
     // ============================================================
 
-    const ENDING_ID_GROUPS = [
+   const ENDING_ID_GROUPS = [
       { key: '⚠️ 공통 분기 (교착)', ids: ['deadlock'] },
+      { key: '⚠️ 공통 분기 (무력/이념)', ids: ['long_war', 'age_ide'] },
       { key: '🏛️ 보수 세력 승리 엔딩', ids: ['stab_low', 'stab_force', 'stab_order', 'stab_welfare', 'stab_default'] },
       { key: '🔥 혁명 세력 승리 엔딩', ids: ['rev_low', 'rev_force', 'rev_order', 'rev_welfare', 'rev_default'] }
     ];
@@ -869,6 +884,8 @@ const INITIAL_INFRASTRUCTURES = [
         case 'rev_order':    return `조건: 혁명 내 규율(Order) 비중 > ${pct(th.dominantAttrRatio)}%`;
         case 'rev_welfare':  return `조건: 혁명 내 상생(Welfare)+이념(Ideology) 비중 > ${pct(th.welfareIdeologyRatio)}%`;
         case 'rev_default':  return '조건: 혁명 승리 기본 상태';
+        case 'long_war':     return `조건: 전체 무력(Force) 비중 > ${pct(th.longtermwar)}%`;
+        case 'age_ide':      return `조건: 전체 이념(Ideology) 비중 > ${pct(th.ageofide)}%`;
         default: return '';
       }
     }
@@ -882,8 +899,9 @@ const INITIAL_INFRASTRUCTURES = [
 
       const groups = [
         { label: '공통 / 양 진영 교착 판정 (1종)', color: '#e0a82e', ids: ['deadlock'] },
+        { label: `공통 / 사회 성향 편중 판정 (2종, 진영 우위 무관)`, color: '#e0a82e', ids: ['long_war', 'age_ide'] },
         { label: `보수 세력 승리 분기 (스카이본[1기] / 스카이가드[2기] 승리, 격차 ${th.deadlockMarginPercent}% 이상)`, color: 'var(--accent-skyborn)', ids: ['stab_low', 'stab_force', 'stab_order', 'stab_welfare', 'stab_default'] },
-        { label: `혁명 세력 승리 분기 (스카이웨일[1기] / 나이트워커[2기] 승리, 격차 ${th.deadlockMarginPercent}% 이상)`, color: 'var(--accent-whale)', ids: ['rev_low', 'rev_force', 'rev_order', 'rev_welfare', 'rev_default'] }
+        { label: `혁명 세력 승리 분기 (스카이웨일[1기] / 나이트워커[2기] 승리, 격차 ${th.deadlockMarginPercent}% 이상)`, color: 'var(--accent-whale)', ids: ['rev_low', 'rev_force', 'rev_order', 'rev_welfare', 'rev_default'] },
       ];
 
       body.innerHTML = groups.map(group => `
@@ -1299,7 +1317,11 @@ const INITIAL_INFRASTRUCTURES = [
       checkNear('혁명', '무력', revForce, revTotal, th.dominantAttrRatio, '강경(무력)');
       checkNear('혁명', '규율', revOrder, revTotal, th.dominantAttrRatio, '강경(규율)');
       checkNear('혁명', '상생+이념', revWelfare + revIdeology, revTotal, th.welfareIdeologyRatio, '명예');
-
+      
+      const allTotal = stabTotal + revTotal;
+      checkNear('전체', '무력', stabForce + revForce, allTotal, th.longtermwar, '영원한 전쟁');
+      checkNear('전체', '이념', stabIdeology + revIdeology, allTotal, th.ageofide, '새 시대의 선언');
+          
       const hintEl = document.getElementById('threshold-hint');
       if (hintEl) {
         if (hints.length > 0) {
