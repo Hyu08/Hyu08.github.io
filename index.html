@@ -605,8 +605,20 @@
                 data-th-key="welfareIdeologyRatio" onchange="updateEndingThreshold('welfareIdeologyRatio', this.value)">
               <span style="font-size:0.72rem; color: var(--text-muted);">상생+이념 비중 합이 이 비율을 넘으면 명예 엔딩</span>
             </div>
-          </div>
-        </div>
+            <div class="form-group" style="margin:0;">
+              <label for="th-longtermwar">장기전 판정 비율 (전체 무력 비중)</label>
+              <input type="number" step="0.01" min="0" max="1" class="form-control" id="th-longtermwar"
+                data-th-key="longtermwar" onchange="updateEndingThreshold('longtermwar', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">전체 AP 중 무력 비중이 이 비율을 넘으면 [영원한 전쟁] 엔딩</span>
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label for="th-ageofide">이념 시대 판정 비율 (전체 이념 비중)</label>
+              <input type="number" step="0.01" min="0" max="1" class="form-control" id="th-ageofide"
+                data-th-key="ageofide" onchange="updateEndingThreshold('ageofide', this.value)">
+              <span style="font-size:0.72rem; color: var(--text-muted);">전체 AP 중 이념 비중이 이 비율을 넘으면 [새 시대의 선언] 엔딩</span>
+            </div>
+          </div> <!-- /#ending-threshold-container -->
+        </div>   <!-- /분기점 관리 panel -->
 
         <div class="panel" style="margin-top: 1.5rem; border-color: var(--secondary-color);">
           <div class="panel-title">
@@ -614,7 +626,7 @@
             <i class="fa-solid fa-circle-info" style="color: var(--secondary-color);"></i>
           </div>
           <p style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 4px;">
-            최종 결산 시 출력되는 11가지 엔딩의 제목과 설명 스크립트를 직접 수정할 수 있습니다.
+            최종 결산 시 출력되는 13가지 엔딩의 제목과 설명 스크립트를 직접 수정할 수 있습니다.
           </p>
           <p style="font-size: 0.78rem; color: var(--text-muted);">
             💡 변경 사항은 저장 즉시 클라우드 동기화 방에 연결된 모든 운영진에게 실시간으로 공유됩니다. 설정 탭의 "엔딩 조건 가이드북"(엔딩 도감)도 이 탭에서 수정한 분기점·스크립트 내용에 맞춰 실시간으로 동기화되어 표시됩니다.
