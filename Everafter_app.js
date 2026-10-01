@@ -2724,6 +2724,9 @@ ${desc}
       const captureBtn = document.getElementById('social-capture-btn') || targetPanel.querySelector('button');
       if (captureBtn) captureBtn.style.display = 'none';
 
+      const originalBg = targetPanel.style.backgroundColor;
+      targetPanel.style.backgroundColor = 'transparent';
+
       html2canvas(targetPanel, {
         scale: 2,
         backgroundColor: '#5c768d',
