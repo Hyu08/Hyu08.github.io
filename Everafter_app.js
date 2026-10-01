@@ -2729,6 +2729,7 @@ ${desc}
 
       targetPanel.style.backgroundColor = 'rgba(28, 36, 51, 0.9)'; 
       targetPanel.style.color = '#ffffff';
+      targetPanel.style.padding = '16px';
           
       html2canvas(targetPanel, {
         scale: 2,
