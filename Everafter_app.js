@@ -2729,7 +2729,7 @@ ${desc}
 
       html2canvas(targetPanel, {
         scale: 2,
-        backgroundColor: '#5c768d',
+        backgroundColor: 'gba(28, 36, 51, 0.9)',
         logging: false
       }).then(canvas => {
         if (captureBtn) captureBtn.style.display = 'inline-flex';
